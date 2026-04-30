@@ -296,11 +296,18 @@ export async function generateMealsWithImages(
             const mealId = crypto.randomBytes(16).toString('hex');
             const imageUrl = await generateMealImage(meal.title, meal.description);
 
+            // Scale ingredients for the headcount
+            const scaledIngredients = meal.ingredients.map(ing => ({
+                name: ing.name,
+                quantity: ing.base_quantity * headcount,
+                unit: ing.unit
+            }));
+
             return {
                 id: mealId,
                 title: meal.title,
                 description: meal.description,
-                ingredients: meal.ingredients,
+                ingredients: scaledIngredients,
                 image_url: imageUrl,
             };
         });
