@@ -93,17 +93,12 @@ class VoteService {
 
         const totalGuests = guests.length;
 
-        // Need at least one guest to determine winner
-        if (totalGuests === 0) {
+        // Need at least one vote to determine winner
+        if (totalGuests === 0 || Object.keys(votes).length === 0) {
             return null;
         }
 
-        // Check if all guests have voted
-        const allGuestsVoted = guests.every((guest) => guest.has_voted);
-
-        if (!allGuestsVoted) {
-            return null;
-        }
+        // No longer require all guests to have voted - show live results
 
         // Calculate votes for each meal
         const mealVoteStats = meals.map((meal) => {
@@ -182,16 +177,9 @@ class VoteService {
      * @param sessionId - Session ID
      */
     async checkAndUpdateWinner(sessionId: string): Promise<void> {
-        const winner = await this.determineWinner(sessionId);
-
-        if (winner) {
-            const session = await firebaseService.getSession(sessionId);
-            if (session.status !== 'completed') {
-                await firebaseService.updateSession(sessionId, {
-                    status: 'completed' as any,
-                });
-            }
-        }
+        // No longer auto-complete sessions - voting is ongoing
+        // Results update live as votes come in
+        // Session can be manually completed by host if needed
     }
 
     /**

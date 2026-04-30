@@ -12,11 +12,13 @@ import * as sessionService from '../services/session.service';
 import { copyToClipboard, getShareUrl } from '../utils/helpers';
 import { SessionStatus } from '../types';
 import toast from 'react-hot-toast';
+import { QRCodeSVG } from 'qrcode.react';
 
 export const SessionView = () => {
     const { id } = useParams<{ id: string }>();
     const { session, isLoading, loadSession, regenerate } = useSession(id, true); // Enable polling
     const [showShareModal, setShowShareModal] = useState(false);
+    const [showQRCode, setShowQRCode] = useState(false);
     const [shareLink, setShareLink] = useState('');
     const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
@@ -140,7 +142,7 @@ export const SessionView = () => {
 
                 {/* Share Modal */}
                 <AnimatePresence>
-                    {showShareModal && (
+                    {showShareModal && !showQRCode && (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -164,7 +166,7 @@ export const SessionView = () => {
                                 <div className="bg-gray-100 rounded-xl p-4 mb-4 break-all text-sm">
                                     {shareLink}
                                 </div>
-                                <div className="flex gap-3">
+                                <div className="flex flex-col gap-3">
                                     <Button
                                         variant="primary"
                                         onClick={handleCopyLink}
@@ -173,8 +175,71 @@ export const SessionView = () => {
                                         Copy Link
                                     </Button>
                                     <Button
+                                        variant="secondary"
+                                        onClick={() => setShowQRCode(true)}
+                                        fullWidth
+                                    >
+                                        Show QR Code
+                                    </Button>
+                                    <Button
                                         variant="outline"
                                         onClick={() => setShowShareModal(false)}
+                                        fullWidth
+                                    >
+                                        Close
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* QR Code Modal */}
+                <AnimatePresence>
+                    {showQRCode && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+                            onClick={() => setShowQRCode(false)}
+                        >
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="bg-white rounded-3xl p-8 max-w-2xl w-full"
+                            >
+                                <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">
+                                    Scan to Vote
+                                </h3>
+                                <p className="text-gray-600 mb-6 text-center">
+                                    Scan this QR code with your phone to join the voting
+                                </p>
+                                <div className="flex justify-center mb-6 bg-white p-8 rounded-2xl">
+                                    <QRCodeSVG
+                                        value={shareLink}
+                                        size={320}
+                                        level="H"
+                                        includeMargin={true}
+                                        className="w-full h-auto max-w-[320px]"
+                                    />
+                                </div>
+                                <div className="flex gap-3">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setShowQRCode(false)}
+                                        fullWidth
+                                    >
+                                        Back
+                                    </Button>
+                                    <Button
+                                        variant="primary"
+                                        onClick={() => {
+                                            setShowQRCode(false);
+                                            setShowShareModal(false);
+                                        }}
                                         fullWidth
                                     >
                                         Close

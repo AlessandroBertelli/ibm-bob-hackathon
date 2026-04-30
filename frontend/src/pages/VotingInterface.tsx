@@ -182,7 +182,7 @@ export const VotingInterface = () => {
                         All Done!
                     </h2>
                     <p className="text-gray-600 mb-6">
-                        Waiting for others to finish voting...
+                        Your votes have been recorded. Check the live results below!
                     </p>
                     <ProgressBar
                         current={currentIndex}
@@ -309,27 +309,19 @@ export const VotingInterface = () => {
                             ) : votingProgress ? (
                                 <div className="space-y-3">
                                     <div className="text-left">
-                                        <p className="text-sm text-gray-600 mb-1">Group Progress</p>
+                                        <p className="text-sm text-gray-600 mb-1">Voting Status</p>
                                         <div className="flex items-center justify-between">
                                             <span className="text-lg font-semibold text-gray-900">
-                                                {votingProgress.guestsCompleted} / {votingProgress.totalGuests}
+                                                {votingProgress.guestsCompleted} people voted
                                             </span>
-                                            <span className="text-sm text-gray-500">
-                                                {Math.round(votingProgress.progressPercentage)}% complete
+                                            <span className="text-sm text-green-600 font-medium">
+                                                🔴 Live
                                             </span>
-                                        </div>
-                                        <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                                            <div
-                                                className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                                                style={{ width: `${votingProgress.progressPercentage}%` }}
-                                            />
                                         </div>
                                     </div>
-                                    {votingProgress.progressPercentage === 100 && (
-                                        <p className="text-sm text-green-600 font-medium">
-                                            🎉 Everyone has voted! Check results below.
-                                        </p>
-                                    )}
+                                    <p className="text-sm text-gray-500">
+                                        Anyone can vote - no limit! Results update in real-time.
+                                    </p>
                                 </div>
                             ) : (
                                 <p className="text-sm text-gray-500">Unable to load status</p>

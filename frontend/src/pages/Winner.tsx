@@ -160,8 +160,19 @@ export const Winner = () => {
                         transition={{ delay: 0.4 }}
                         className="text-gray-600 text-xl"
                     >
-                        {hasVotes ? 'Here\'s how everyone voted' : 'No votes yet - start voting!'}
+                        {hasVotes ? 'Live Results - Updates automatically' : 'No votes yet - start voting!'}
                     </motion.p>
+                    {hasVotes && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.5 }}
+                            className="mt-2 flex items-center justify-center gap-2 text-sm text-gray-500"
+                        >
+                            <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            <span>Updating every 3 seconds</span>
+                        </motion.div>
+                    )}
                 </motion.div>
 
                 {/* Results List */}
