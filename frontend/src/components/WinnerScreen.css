@@ -1,0 +1,138 @@
+.winner-screen {
+    min-height: 100vh;
+    padding: 2rem 0;
+}
+
+.celebration {
+    text-align: center;
+    margin-bottom: 2rem;
+    animation: celebrate 0.6s ease-out;
+}
+
+@keyframes celebrate {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.celebration h1 {
+    color: white;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.celebration .subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.2rem;
+}
+
+.winner-card {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.winner-image {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+}
+
+.winner-content {
+    padding: 2rem;
+}
+
+.winner-content h2 {
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.winner-description {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.ingredients-section {
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.ingredients-section h3 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.ingredients-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.5rem;
+}
+
+.ingredients-list li {
+    padding: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.ingredients-list li:before {
+    content: "✓ ";
+    color: var(--success-color);
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.winner-content .actions {
+    display: flex;
+    justify-content: center;
+}
+
+.winner-content .btn-primary {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .celebration h1 {
+        font-size: 2rem;
+    }
+
+    .winner-image {
+        height: 250px;
+    }
+
+    .winner-content {
+        padding: 1.5rem;
+    }
+
+    .winner-content h2 {
+        font-size: 1.5rem;
+    }
+
+    .ingredients-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Made with Bob */
