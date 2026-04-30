@@ -1,0 +1,48 @@
+{
+  "name": "group-food-tinder-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Group Food Tinder application",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon",
+    "dev:mock": "SERVICE_MODE=mock nodemon",
+    "dev:test": "SERVICE_MODE=test nodemon",
+    "dev:prod": "SERVICE_MODE=production nodemon",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:mock": "SERVICE_MODE=mock node dist/index.js",
+    "start:test": "SERVICE_MODE=test node dist/index.js",
+    "start:prod": "SERVICE_MODE=production node dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "food",
+    "tinder",
+    "group",
+    "restaurant",
+    "api"
+  ],
+  "author": "Group Food Tinder Team",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "firebase-admin": "^13.8.0",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^8.0.7",
+    "openai": "^6.35.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.6.0",
+    "@types/nodemailer": "^8.0.0",
+    "nodemon": "^3.1.14",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^6.0.3"
+  }
+}
