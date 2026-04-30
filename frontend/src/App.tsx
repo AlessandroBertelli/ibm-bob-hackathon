@@ -14,6 +14,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/verify" element={<AuthVerify />} />
+        <Route path="/auth/verify" element={<AuthVerify />} />
         <Route path="/create" element={<CreateSession />} />
         <Route path="/session/:id" element={<SessionView />} />
         <Route path="/vote/:token" element={<VotingInterface />} />
