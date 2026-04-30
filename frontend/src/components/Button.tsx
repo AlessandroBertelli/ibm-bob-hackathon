@@ -20,9 +20,9 @@ interface ButtonProps {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-    primary: 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 shadow-lg',
-    secondary: 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg',
-    outline: 'border-2 border-gray-300 text-gray-700 hover:border-orange-500 hover:text-orange-500 bg-white',
+    primary: 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:from-blue-700 hover:to-cyan-600 shadow-lg',
+    secondary: 'bg-gradient-to-r from-emerald-500 to-green-500 text-white hover:from-emerald-600 hover:to-green-600 shadow-lg',
+    outline: 'border-2 border-gray-300 text-gray-700 hover:border-blue-600 hover:text-blue-600 bg-white',
     danger: 'bg-red-500 text-white hover:bg-red-600 shadow-lg',
 };
 

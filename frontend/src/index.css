@@ -1,20 +1,98 @@
 @import "tailwindcss";
 
+/* CSS Variables for Design System */
+:root {
+  --primary-color: #2563eb;
+  --primary-hover: #1d4ed8;
+  --secondary-color: #06b6d4;
+  --accent-color: #f97316;
+  --success-color: #10b981;
+  --danger-color: #ef4444;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+
+  --bg-primary: #ffffff;
+  --bg-secondary: #f0f9ff;
+  --border-color: #e2e8f0;
+
+  --shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 18px 36px -18px rgba(15, 23, 42, 0.35);
+}
+
 /* Global Styles */
 @layer base {
   * {
     @apply antialiased;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    height: 100%;
+    width: 100%;
+    overscroll-behavior: none;
   }
 
   body {
-    @apply bg-gradient-to-br from-orange-50 via-red-50 to-yellow-50;
-    @apply text-gray-900;
-    @apply min-h-screen;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: var(--text-primary);
+    background: #061224;
+    background-image:
+      radial-gradient(at 12% 20%, rgba(6, 182, 212, 0.85) 0px, transparent 45%),
+      radial-gradient(at 85% 10%, rgba(37, 99, 235, 0.85) 0px, transparent 50%),
+      radial-gradient(at 75% 85%, rgba(249, 115, 22, 0.75) 0px, transparent 45%),
+      radial-gradient(at 15% 90%, rgba(14, 165, 233, 0.7) 0px, transparent 50%),
+      linear-gradient(135deg, #061224 0%, #0a2a4a 50%, #0e3b3b 100%);
+    background-size: 200% 200%;
+    background-attachment: fixed;
+    animation: bgShift 18s ease-in-out infinite;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 
   html {
     @apply scroll-smooth;
   }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Poppins', 'Inter', sans-serif;
+  }
+}
+
+@keyframes bgShift {
+
+  0%,
+  100% {
+    background-position: 0% 0%;
+  }
+
+  50% {
+    background-position: 100% 100%;
+  }
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.app {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
 }
 
 /* Custom Utilities */
@@ -79,27 +157,29 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gradient-to-b from-orange-400 to-red-400;
+  background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gradient-to-b from-orange-500 to-red-500;
+  background: linear-gradient(135deg, #1d4ed8 0%, #0891b2 100%);
 }
 
 /* Focus Styles */
 *:focus-visible {
-  @apply outline-none ring-2 ring-orange-500 ring-offset-2;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
 }
 
 /* Selection Styles */
 ::selection {
-  @apply bg-orange-200 text-orange-900;
+  background: rgba(37, 99, 235, 0.2);
+  color: white;
 }
 
 /* Print Styles */
@@ -132,37 +212,59 @@
 
 /* Gradient Text */
 .gradient-text {
-  @apply bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent;
+  background: linear-gradient(135deg, #2563eb 0%, #06b6d4 50%, #f97316 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Glass Morphism */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Responsive Typography */
 @layer base {
   h1 {
-    @apply text-4xl md:text-5xl lg:text-6xl font-bold;
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
   }
 
   h2 {
-    @apply text-3xl md:text-4xl lg:text-5xl font-bold;
+    font-size: 1.85rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
   }
 
   h3 {
-    @apply text-2xl md:text-3xl lg:text-4xl font-bold;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
   }
 
   h4 {
-    @apply text-xl md:text-2xl lg:text-3xl font-semibold;
+    font-size: 1.25rem;
+    font-weight: 600;
   }
 
   p {
     @apply text-base md:text-lg;
+  }
+
+  @media (max-width: 768px) {
+    h1 {
+      font-size: 2.25rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+    }
   }
 }
 

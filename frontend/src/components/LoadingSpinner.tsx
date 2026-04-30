@@ -17,7 +17,7 @@ export const LoadingSpinner = ({ size = 'md', text }: LoadingSpinnerProps) => {
     return (
         <div className="flex flex-col items-center justify-center gap-4">
             <motion.div
-                className={`${sizeStyles[size]} border-4 border-gray-200 border-t-orange-500 rounded-full`}
+                className={`${sizeStyles[size]} border-4 border-gray-200 border-t-blue-600 rounded-full`}
                 animate={{ rotate: 360 }}
                 transition={{
                     duration: 1,

@@ -142,7 +142,7 @@ export const Winner = () => {
                         transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
                         className="inline-block mb-4"
                     >
-                        <div className="w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-2xl">
+                        <div className="w-24 h-24 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-full flex items-center justify-center shadow-2xl">
                             <span className="text-5xl">📊</span>
                         </div>
                     </motion.div>
@@ -150,7 +150,7 @@ export const Winner = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="text-5xl font-bold text-gray-900 mb-2"
+                        className="text-5xl font-bold text-white mb-2"
                     >
                         Voting Results
                     </motion.h1>
@@ -158,7 +158,7 @@ export const Winner = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.4 }}
-                        className="text-gray-600 text-xl"
+                        className="text-white text-xl opacity-90"
                     >
                         {hasVotes ? 'Live Results - Updates automatically' : 'No votes yet - start voting!'}
                     </motion.p>
@@ -167,7 +167,7 @@ export const Winner = () => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.5 }}
-                            className="mt-2 flex items-center justify-center gap-2 text-sm text-gray-500"
+                            className="mt-2 flex items-center justify-center gap-2 text-sm text-white opacity-75"
                         >
                             <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                             <span>Updating every 3 seconds</span>
@@ -197,7 +197,7 @@ export const Winner = () => {
                                             }}
                                         />
                                         {index === 0 && meal.yesVotes > 0 && (
-                                            <div className="absolute top-4 left-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full font-bold text-sm shadow-lg">
+                                            <div className="absolute top-4 left-4 bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-3 py-1 rounded-full font-bold text-sm shadow-lg">
                                                 🏆 Top Choice
                                             </div>
                                         )}
@@ -243,7 +243,7 @@ export const Winner = () => {
                                                 <span className="text-sm font-medium text-gray-700">
                                                     Approval Rate
                                                 </span>
-                                                <span className="text-lg font-bold text-orange-600">
+                                                <span className="text-lg font-bold text-blue-600">
                                                     {meal.totalVotes > 0 ? `${Math.round(meal.percentage)}%` : 'N/A'}
                                                 </span>
                                             </div>

@@ -44,7 +44,7 @@ export const MealCard = ({
                         <ul className="space-y-1">
                             {meal.ingredients.slice(0, 5).map((ingredient, index) => (
                                 <li key={index} className="text-sm text-gray-600 flex items-start">
-                                    <span className="text-orange-500 mr-2">•</span>
+                                    <span className="text-blue-600 mr-2">•</span>
                                     <span>{formatIngredientDisplay(ingredient)}</span>
                                 </li>
                             ))}

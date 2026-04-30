@@ -143,9 +143,9 @@ export const RecipeModal = ({ meal, isOpen, onClose }: RecipeModalProps) => {
                                         {meal.ingredients.map((ingredient, index) => (
                                             <div
                                                 key={index}
-                                                className="flex items-start bg-orange-50 rounded-xl p-3"
+                                                className="flex items-start bg-blue-50 rounded-xl p-3"
                                             >
-                                                <span className="text-orange-500 mr-3 text-lg">•</span>
+                                                <span className="text-blue-600 mr-3 text-lg">•</span>
                                                 <span className="text-gray-700">
                                                     {formatIngredientDisplay(ingredient)}
                                                 </span>
@@ -169,7 +169,7 @@ export const RecipeModal = ({ meal, isOpen, onClose }: RecipeModalProps) => {
                                                 transition={{ delay: index * 0.1 }}
                                                 className="flex items-start"
                                             >
-                                                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                                                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
                                                     {index + 1}
                                                 </div>
                                                 <p className="text-gray-700 leading-relaxed pt-1">

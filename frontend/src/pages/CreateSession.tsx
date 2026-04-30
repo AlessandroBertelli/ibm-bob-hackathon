@@ -73,10 +73,10 @@ export const CreateSession = () => {
             >
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                    <h1 className="text-4xl font-bold text-white mb-2">
                         Create Your Session
                     </h1>
-                    <p className="text-gray-600 text-lg">
+                    <p className="text-white text-lg opacity-90">
                         Tell us about your group and we'll generate perfect meal options
                     </p>
                 </div>
@@ -145,7 +145,7 @@ export const CreateSession = () => {
                                             })
                                         }
                                         disabled={isLoading}
-                                        className="w-5 h-5 text-orange-500 rounded focus:ring-orange-500"
+                                        className="w-5 h-5 text-blue-600 rounded focus:ring-blue-600"
                                     />
                                     <span className="text-gray-700">Vegan</span>
                                 </label>
@@ -163,7 +163,7 @@ export const CreateSession = () => {
                                             })
                                         }
                                         disabled={isLoading}
-                                        className="w-5 h-5 text-orange-500 rounded focus:ring-orange-500"
+                                        className="w-5 h-5 text-blue-600 rounded focus:ring-blue-600"
                                     />
                                     <span className="text-gray-700">Gluten-Free</span>
                                 </label>
@@ -187,7 +187,7 @@ export const CreateSession = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
-                    className="text-center text-gray-500 text-sm mt-6"
+                    className="text-center text-white text-sm mt-6 opacity-80"
                 >
                     This may take 30-60 seconds while we generate your personalized menu
                 </motion.p>

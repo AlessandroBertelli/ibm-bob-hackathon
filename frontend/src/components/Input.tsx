@@ -31,8 +31,8 @@ export const Input = ({
     type = 'text',
     ...props
 }: InputProps) => {
-    const baseStyles = 'px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent';
-    const errorStyles = error ? 'border-red-500' : 'border-gray-300';
+    const baseStyles = 'px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent';
+    const errorStyles = error ? 'border-red-500' : 'border-gray-300 hover:border-blue-400';
     const widthStyle = fullWidth ? 'w-full' : '';
 
     return (

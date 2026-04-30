@@ -52,14 +52,14 @@ export const Landing = () => {
                         transition={{ type: 'spring', stiffness: 200, damping: 15 }}
                         className="inline-block mb-4"
                     >
-                        <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-500 rounded-3xl flex items-center justify-center shadow-2xl">
+                        <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-3xl flex items-center justify-center shadow-2xl">
                             <span className="text-4xl">🍽️</span>
                         </div>
                     </motion.div>
-                    <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                    <h1 className="text-4xl font-bold text-white mb-2">
                         Group Food Tinder
                     </h1>
-                    <p className="text-gray-600 text-lg">
+                    <p className="text-white text-lg opacity-90">
                         Swipe your way to the perfect group meal
                     </p>
                 </div>

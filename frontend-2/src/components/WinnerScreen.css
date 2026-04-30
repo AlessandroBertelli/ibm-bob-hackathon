@@ -1,0 +1,798 @@
+.winner-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 2rem 0 3rem;
+}
+
+.winner-container {
+    max-width: 540px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    animation: winner-rise 540ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes winner-rise {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ---------------- Headline ---------------- */
+
+.winner-headline {
+    text-align: center;
+}
+
+.winner-eyebrow {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 0.4rem;
+}
+
+.winner-title {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 2.1rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+/* ---------------- Hero card ---------------- */
+
+.winner-card-apple {
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 1.5rem;
+    overflow: hidden;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.25) inset,
+        0 32px 60px -28px rgba(15, 23, 42, 0.5);
+}
+
+.winner-card-media {
+    position: relative;
+    aspect-ratio: 21 / 9;
+    max-height: 220px;
+    overflow: hidden;
+    background: #1f2937;
+}
+
+.winner-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.winner-card-tag {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.4rem 0.8rem;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--text-primary);
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 4px 14px -4px rgba(15, 23, 42, 0.25);
+}
+
+.winner-card-body {
+    padding: 1.6rem 1.5rem 1.6rem;
+}
+
+.winner-card-name {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 0.5rem;
+}
+
+.winner-card-description {
+    font-size: 0.98rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin-bottom: 1.4rem;
+}
+
+.winner-card-stats {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1rem 0;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.winner-card-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.winner-card-stat-value {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.025em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.winner-card-stat-unit {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-left: 0.1rem;
+}
+
+.winner-card-stat-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.winner-card-divider {
+    width: 1px;
+    height: 36px;
+    background: rgba(15, 23, 42, 0.1);
+}
+
+.winner-card-ingredients {
+    margin-top: 1.4rem;
+}
+
+.winner-card-section-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 0.6rem;
+}
+
+.ingredients-chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.ingredients-chips li {
+    padding: 0.32rem 0.7rem;
+    background: rgba(15, 23, 42, 0.05);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* ---------------- Recipe panel ---------------- */
+
+.recipe-panel {
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 1.4rem;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.25) inset,
+        0 18px 40px -22px rgba(15, 23, 42, 0.35);
+    overflow: hidden;
+    transition: box-shadow 280ms ease;
+}
+
+.recipe-panel.is-loaded {
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.25) inset,
+        0 28px 50px -22px rgba(15, 23, 42, 0.45);
+}
+
+.recipe-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 1.25rem 1.4rem;
+}
+
+.recipe-cta-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.recipe-cta-eyebrow {
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.recipe-cta-title {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin-bottom: 0.2rem;
+}
+
+.recipe-cta-sub {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.recipe-cta-btn {
+    flex: 0 0 auto;
+    min-width: 110px;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.9rem;
+}
+
+/* Loading skeleton */
+
+.recipe-loading {
+    padding: 1.4rem 1.4rem 1.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.recipe-skeleton-pills {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.recipe-skeleton-pills span {
+    width: 60px;
+    height: 38px;
+    border-radius: 12px;
+    background: linear-gradient(
+        90deg,
+        rgba(15, 23, 42, 0.05) 0%,
+        rgba(15, 23, 42, 0.1) 50%,
+        rgba(15, 23, 42, 0.05) 100%
+    );
+    background-size: 200% 100%;
+    animation: recipe-shimmer 1.4s ease-in-out infinite;
+}
+
+.recipe-skeleton-line {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(
+        90deg,
+        rgba(15, 23, 42, 0.05) 0%,
+        rgba(15, 23, 42, 0.1) 50%,
+        rgba(15, 23, 42, 0.05) 100%
+    );
+    background-size: 200% 100%;
+    animation: recipe-shimmer 1.4s ease-in-out infinite;
+}
+
+.recipe-skeleton-line.short {
+    width: 40%;
+}
+
+.recipe-skeleton-line.medium {
+    width: 75%;
+}
+
+@keyframes recipe-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.recipe-loading-text {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.recipe-error {
+    padding: 1.4rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    align-items: center;
+}
+
+.recipe-error p {
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+/* Loaded content */
+
+.recipe-content {
+    padding: 1.4rem 1.4rem 1.6rem;
+    animation: recipe-reveal 360ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes recipe-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.recipe-header {
+    margin-bottom: 1.1rem;
+}
+
+.recipe-eyebrow {
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+}
+
+.recipe-title {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 0.4rem;
+}
+
+.recipe-summary {
+    font-size: 0.93rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.recipe-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+    gap: 0.5rem;
+    padding: 0.9rem 0;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    margin-bottom: 1.2rem;
+}
+
+.recipe-meta-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.3rem 0.4rem;
+    text-align: center;
+}
+
+.recipe-meta-value {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.recipe-meta-value-text {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.recipe-meta-unit {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-left: 0.05rem;
+}
+
+.recipe-meta-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.recipe-section {
+    margin-bottom: 1.4rem;
+}
+
+.recipe-section:last-child {
+    margin-bottom: 0;
+}
+
+.recipe-section-title {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    margin-bottom: 0.7rem;
+}
+
+/* Ingredients table */
+
+.recipe-ingredients {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.recipe-ingredient {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 0.9rem;
+    padding: 0.55rem 0;
+    border-top: 1px solid rgba(15, 23, 42, 0.05);
+    align-items: baseline;
+}
+
+.recipe-ingredient:first-child {
+    border-top: none;
+    padding-top: 0;
+}
+
+.recipe-ingredient-qty {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+}
+
+.recipe-ingredient-unit {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.recipe-ingredient-name {
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+/* Steps */
+
+.recipe-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: step;
+}
+
+.recipe-step {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 0.9rem;
+    padding: 0.85rem 0;
+    border-top: 1px solid rgba(15, 23, 42, 0.05);
+    animation: recipe-step-in 380ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.recipe-step:first-child {
+    border-top: none;
+    padding-top: 0.2rem;
+}
+
+.recipe-step:nth-child(1) { animation-delay: 40ms; }
+.recipe-step:nth-child(2) { animation-delay: 100ms; }
+.recipe-step:nth-child(3) { animation-delay: 160ms; }
+.recipe-step:nth-child(4) { animation-delay: 220ms; }
+.recipe-step:nth-child(5) { animation-delay: 280ms; }
+.recipe-step:nth-child(6) { animation-delay: 340ms; }
+.recipe-step:nth-child(7) { animation-delay: 400ms; }
+
+@keyframes recipe-step-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.recipe-step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--text-primary);
+    color: white;
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.05rem;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+.recipe-step-body {
+    min-width: 0;
+}
+
+.recipe-step-title {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin-bottom: 0.25rem;
+}
+
+.recipe-step-text {
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+}
+
+/* Tips */
+
+.recipe-tips-section {
+    padding: 1rem 1.1rem;
+    background: rgba(15, 23, 42, 0.04);
+    border-radius: 1rem;
+    margin-top: 0.5rem;
+}
+
+.recipe-tips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.recipe-tips li {
+    position: relative;
+    padding-left: 1.1rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.recipe-tips li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55rem;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--primary-color, #3b82f6);
+}
+
+@media (max-width: 480px) {
+    .recipe-cta {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.9rem;
+        padding: 1.1rem 1.2rem;
+    }
+
+    .recipe-cta-btn {
+        width: 100%;
+    }
+
+    .recipe-content {
+        padding: 1.2rem 1.2rem 1.4rem;
+    }
+
+    .recipe-title {
+        font-size: 1.3rem;
+    }
+
+    .recipe-ingredient {
+        grid-template-columns: 88px 1fr;
+        gap: 0.7rem;
+    }
+}
+
+/* ---------------- Leaderboard ---------------- */
+
+.winner-leaderboard {
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 1.4rem;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.25) inset,
+        0 18px 40px -22px rgba(15, 23, 42, 0.35);
+}
+
+.winner-leaderboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.95rem 1.1rem 0.7rem;
+}
+
+.winner-leaderboard-eyebrow {
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.winner-leaderboard-eyebrow--right {
+    color: rgba(15, 23, 42, 0.45);
+}
+
+.winner-leaderboard-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0.4rem;
+}
+
+.winner-leaderboard-row {
+    display: grid;
+    grid-template-columns: 1.5rem 36px 1fr auto;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.7rem 1.1rem;
+    border-top: 1px solid rgba(15, 23, 42, 0.06);
+    transition: background 180ms ease;
+}
+
+.winner-leaderboard-row:hover {
+    background: rgba(15, 23, 42, 0.025);
+}
+
+.winner-leaderboard-rank {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.winner-leaderboard-image {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.winner-leaderboard-info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.winner-leaderboard-title {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.winner-leaderboard-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(15, 23, 42, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.winner-leaderboard-bar-fill {
+    height: 100%;
+    background: var(--text-primary);
+    border-radius: 999px;
+    transition: width 600ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.winner-leaderboard-pct {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+}
+
+.winner-leaderboard-pct-unit {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-left: 0.05rem;
+}
+
+/* ---------------- Actions ---------------- */
+
+.winner-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.winner-actions .btn-primary {
+    min-width: 220px;
+}
+
+@media (max-width: 480px) {
+    .winner-title {
+        font-size: 1.7rem;
+    }
+
+    .winner-card-body {
+        padding: 1.3rem 1.25rem 1.4rem;
+    }
+
+    .winner-card-name {
+        font-size: 1.4rem;
+    }
+
+    .winner-card-stat-value {
+        font-size: 1.45rem;
+    }
+
+    .winner-leaderboard-row {
+        grid-template-columns: 1.25rem 32px 1fr auto;
+        gap: 0.7rem;
+        padding: 0.7rem 0.95rem;
+    }
+
+    .winner-leaderboard-image {
+        width: 32px;
+        height: 32px;
+    }
+
+    .winner-leaderboard-title {
+        font-size: 0.9rem;
+    }
+}
+
+/* Made with Bob */
