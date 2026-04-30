@@ -8,7 +8,7 @@
     "dev:mock": "SERVICE_MODE=mock nodemon",
     "dev:test": "SERVICE_MODE=test nodemon",
     "dev:prod": "SERVICE_MODE=production nodemon",
-    "build": "tsc",
+    "build": "npm install --include=dev && tsc",
     "start": "node dist/index.js",
     "start:mock": "SERVICE_MODE=mock node dist/index.js",
     "start:test": "SERVICE_MODE=test node dist/index.js",
