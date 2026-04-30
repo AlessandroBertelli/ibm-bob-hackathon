@@ -135,7 +135,6 @@ Requirements:
                 messages: [systemMessage, userMessage],
                 temperature: CONFIG.TEMPERATURE,
                 max_tokens: CONFIG.MAX_TOKENS,
-                response_format: { type: 'json_object' },
             });
         });
 
@@ -144,12 +143,24 @@ Requirements:
             throw new Error('No content received from OpenAI');
         }
 
-        // Parse the JSON response
+        console.log('OpenAI raw response:', content.substring(0, 200) + '...');
+
+        // Parse the JSON response - handle markdown code blocks
         let meals: GeneratedMeal[];
         try {
-            const parsed = JSON.parse(content);
-            // Handle both direct array and object with meals property
-            meals = Array.isArray(parsed) ? parsed : (parsed.meals || []);
+            // Remove markdown code blocks if present
+            let jsonContent = content.trim();
+            if (jsonContent.startsWith('```')) {
+                jsonContent = jsonContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            }
+
+            const parsed = JSON.parse(jsonContent);
+            // Handle both direct array and object with meals/items/data property
+            meals = Array.isArray(parsed)
+                ? parsed
+                : (parsed.meals || parsed.items || parsed.data || []);
+
+            console.log(`Parsed ${meals.length} meals from OpenAI response`);
         } catch (parseError) {
             console.error('Failed to parse OpenAI response:', content);
             throw new Error('Invalid JSON response from OpenAI');
