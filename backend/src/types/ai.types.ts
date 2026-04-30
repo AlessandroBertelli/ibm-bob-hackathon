@@ -30,7 +30,7 @@ export interface MealWithImage {
     title: string;
     description: string;
     ingredients: ScaledIngredient[];
-    image_url: string;
+    imageUrl: string; // Changed from image_url to match frontend camelCase convention
 }
 
 /**

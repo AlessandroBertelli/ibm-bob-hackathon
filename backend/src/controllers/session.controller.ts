@@ -108,7 +108,7 @@ async function generateAndAddMeals(
             mealsObject[meal.id] = {
                 title: meal.title,
                 description: meal.description,
-                image_url: meal.image_url,
+                imageUrl: meal.imageUrl,
                 ingredients: meal.ingredients,
                 created_at: Date.now(),
             };

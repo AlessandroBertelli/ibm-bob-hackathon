@@ -319,7 +319,7 @@ export async function generateMealsWithImages(
                 title: meal.title,
                 description: meal.description,
                 ingredients: scaledIngredients,
-                image_url: imageUrl,
+                imageUrl: imageUrl, // Changed from image_url to imageUrl for frontend compatibility
             };
         });
 
@@ -358,7 +358,7 @@ export async function regenerateMealOptions(
             mealsObject[meal.id] = {
                 title: meal.title,
                 description: meal.description,
-                image_url: meal.image_url,
+                imageUrl: meal.imageUrl,
                 ingredients: meal.ingredients,
                 created_at: Date.now(),
             };
