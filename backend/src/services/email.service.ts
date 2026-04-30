@@ -1,68 +1,39 @@
 /**
  * Email Service
- * Handles sending emails using nodemailer
+ * Handles sending emails using Resend
  */
 
-import nodemailer, { Transporter } from 'nodemailer';
+import { Resend } from 'resend';
 import { InternalServerError } from '../utils/errors.util';
-
-/**
- * Email configuration interface
- */
-interface EmailConfig {
-    host: string;
-    port: number;
-    secure: boolean;
-    auth: {
-        user: string;
-        pass: string;
-    };
-}
 
 /**
  * Email service class
  */
 class EmailService {
-    private transporter: Transporter | null = null;
+    private resend: Resend | null = null;
     private fromEmail: string;
 
     constructor() {
-        this.fromEmail = process.env.EMAIL_FROM || 'noreply@groupfoodtinder.com';
-        this.initializeTransporter();
+        this.fromEmail = process.env.EMAIL_FROM || 'BiteMatch <onboarding@resend.dev>';
+        this.initializeResend();
     }
 
     /**
-     * Initialize nodemailer transporter
+     * Initialize Resend client
      */
-    private initializeTransporter(): void {
+    private initializeResend(): void {
         try {
-            const config: EmailConfig = {
-                host: process.env.SMTP_HOST || 'smtp.gmail.com',
-                port: parseInt(process.env.SMTP_PORT || '587', 10),
-                secure: process.env.SMTP_SECURE === 'true',
-                auth: {
-                    user: process.env.SMTP_USER || '',
-                    pass: process.env.SMTP_PASS || '',
-                },
-            };
+            const apiKey = process.env.RESEND_API_KEY;
 
-            if (!config.auth.user || !config.auth.pass) {
-                console.warn('Email service not configured. SMTP credentials missing.');
+            if (!apiKey) {
+                console.warn('⚠️ Email service not configured. RESEND_API_KEY missing.');
                 return;
             }
 
-            this.transporter = nodemailer.createTransport(config);
-
-            // Verify connection
-            this.transporter.verify((error) => {
-                if (error) {
-                    console.error('Email service verification failed:', error);
-                } else {
-                    console.log('✅ Email service is ready');
-                }
-            });
+            this.resend = new Resend(apiKey);
+            console.log('✅ Resend email service initialized');
         } catch (error) {
-            console.error('Failed to initialize email service:', error);
+            console.error('Failed to initialize Resend email service:', error);
         }
     }
 
@@ -73,7 +44,7 @@ class EmailService {
      * @returns Promise<boolean> - true if email sent successfully
      */
     async sendMagicLink(email: string, token: string): Promise<boolean> {
-        if (!this.transporter) {
+        if (!this.resend) {
             throw new InternalServerError('Email service is not configured');
         }
 
@@ -83,18 +54,24 @@ class EmailService {
         const htmlContent = this.getMagicLinkTemplate(magicLink);
 
         try {
-            const info = await this.transporter.sendMail({
-                from: `"Group Food Tinder" <${this.fromEmail}>`,
+            console.log(`📧 Sending magic link to ${email}...`);
+
+            const { data, error } = await this.resend.emails.send({
+                from: this.fromEmail,
                 to: email,
                 subject: 'Your Magic Link to Sign In',
                 html: htmlContent,
-                text: `Click this link to sign in: ${magicLink}\n\nThis link will expire in 15 minutes.`,
             });
 
-            console.log('Magic link email sent:', info.messageId);
+            if (error) {
+                console.error('❌ Resend API error:', error);
+                throw new InternalServerError(`Failed to send email: ${error.message}`);
+            }
+
+            console.log('✅ Magic link email sent successfully:', data?.id);
             return true;
         } catch (error) {
-            console.error('Failed to send magic link email:', error);
+            console.error('❌ Failed to send magic link email:', error);
             throw new InternalServerError('Failed to send email');
         }
     }
@@ -111,7 +88,7 @@ class EmailService {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In to Group Food Tinder</title>
+    <title>Sign In to BiteMatch</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -185,12 +162,12 @@ class EmailService {
     <div class="container">
         <div class="header">
             <div class="logo">🍕</div>
-            <h1>Sign In to Group Food Tinder</h1>
+            <h1>Sign In to BiteMatch</h1>
         </div>
         
         <p>Hello!</p>
         
-        <p>You requested to sign in to Group Food Tinder. Click the button below to access your account:</p>
+        <p>You requested to sign in to BiteMatch. Click the button below to access your account:</p>
         
         <div style="text-align: center;">
             <a href="${magicLink}" class="button">Sign In Now</a>
@@ -205,7 +182,7 @@ class EmailService {
         
         <div class="footer">
             <p>If you didn't request this email, you can safely ignore it.</p>
-            <p>© ${new Date().getFullYear()} Group Food Tinder. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} BiteMatch. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -225,7 +202,7 @@ class EmailService {
         sessionLink: string,
         hostName: string = 'A friend'
     ): Promise<boolean> {
-        if (!this.transporter) {
+        if (!this.resend) {
             throw new InternalServerError('Email service is not configured');
         }
 
@@ -252,22 +229,26 @@ class EmailService {
             <a href="${sessionLink}" style="display: inline-block; padding: 14px 32px; background-color: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600;">Join Voting Session</a>
         </div>
         
-        <p style="font-size: 14px; color: #6b7280; text-align: center;">© ${new Date().getFullYear()} Group Food Tinder</p>
+        <p style="font-size: 14px; color: #6b7280; text-align: center;">© ${new Date().getFullYear()} BiteMatch</p>
     </div>
 </body>
 </html>
         `.trim();
 
         try {
-            const info = await this.transporter.sendMail({
-                from: `"Group Food Tinder" <${this.fromEmail}>`,
+            const { data, error } = await this.resend.emails.send({
+                from: this.fromEmail,
                 to: email,
                 subject: `${hostName} invited you to vote on food!`,
                 html: htmlContent,
-                text: `${hostName} has invited you to help choose what to eat! Join here: ${sessionLink}`,
             });
 
-            console.log('Session invitation email sent:', info.messageId);
+            if (error) {
+                console.error('Resend API error:', error);
+                throw new InternalServerError(`Failed to send email: ${error.message}`);
+            }
+
+            console.log('Session invitation email sent:', data?.id);
             return true;
         } catch (error) {
             console.error('Failed to send session invitation email:', error);
