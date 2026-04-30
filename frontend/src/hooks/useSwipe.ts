@@ -92,7 +92,7 @@ export const useSwipe = ({
      * Handle drag end event from framer-motion
      */
     const handleDragEnd = useCallback(
-        (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
             const swipe = info.offset.x;
             const velocity = info.velocity.x;
 
