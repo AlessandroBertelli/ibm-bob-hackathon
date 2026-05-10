@@ -13,8 +13,10 @@ import { rateLimit } from '../_lib/ratelimit';
 export default route({ methods: ['GET', 'DELETE'], auth: true }, async (req: AuthedRequest, res) => {
     if (!req.user) throw new AuthenticationError();
 
-    const path = req.query.path as string[] || [];
+    const path = req.segments;
     const method = req.method;
+
+    console.log(`[api/auth] ${method} /${path.join('/')}`);
 
     // --- GET /api/auth/me ---
     if (method === 'GET' && (path.length === 0 || path[0] === 'me')) {

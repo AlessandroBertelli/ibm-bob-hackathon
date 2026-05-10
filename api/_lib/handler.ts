@@ -16,9 +16,13 @@ interface RouteOptions {
     methods: Method[];
     auth?: boolean;
 }
-
 export interface AuthedRequest extends VercelRequest {
     user?: AuthUser;
+    /**
+     * Normalized sub-path segments after the function's base route.
+     * e.g. /api/sessions/mine -> ['mine']
+     */
+    segments: string[];
 }
 
 type RouteHandler = (req: AuthedRequest, res: VercelResponse) => unknown | Promise<unknown>;
@@ -31,10 +35,42 @@ function extractToken(authHeader: string | string[] | undefined): string | null 
     return raw.slice(7).trim() || null;
 }
 
+/**
+ * Extracts segments from the URL after the given prefix.
+ * e.g. extractSegments('/api/sessions/mine', '/api/sessions') -> ['mine']
+ */
+function extractSegments(url: string | undefined, prefix: string): string[] {
+    if (!url) return [];
+    // Remove query string
+    const path = url.split('?')[0];
+    if (!path.startsWith(prefix)) return [];
+
+    return path
+        .slice(prefix.length)
+        .split('/')
+        .filter((s) => s.length > 0);
+}
+
 export function route(opts: RouteOptions, handler: RouteHandler) {
     return async (req: VercelRequest, res: VercelResponse) => {
         try {
+            // Determine the base prefix from the request path.
+            // Vercel populates req.url with the full path including /api.
+            const url = req.url || '';
+            let prefix = '';
+            if (url.startsWith('/api/sessions')) prefix = '/api/sessions';
+            else if (url.startsWith('/api/votes')) prefix = '/api/votes';
+            else if (url.startsWith('/api/track')) prefix = '/api/track';
+            else if (url.startsWith('/api/system')) prefix = '/api/system';
+            else if (url.startsWith('/api/auth')) prefix = '/api/auth';
+            else if (url.startsWith('/api/saved-meals')) prefix = '/api/saved-meals';
+            else if (url.startsWith('/api/cron')) prefix = '/api/cron';
+
+            const authed = req as AuthedRequest;
+            authed.segments = extractSegments(url, prefix);
+
             if (!opts.methods.includes(req.method as Method)) {
+...
                 res.setHeader('Allow', opts.methods.join(', '));
                 res.status(405).json({ error: `Method ${req.method} not allowed` });
                 return;

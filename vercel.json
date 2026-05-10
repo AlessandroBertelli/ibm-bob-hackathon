@@ -6,31 +6,7 @@
     "cleanUrls": true,
     "trailingSlash": false,
     "functions": {
-        "api/sessions/[[...path]].ts": {
-            "runtime": "@vercel/node@5.4.0",
-            "maxDuration": 60
-        },
-        "api/saved-meals/[[...path]].ts": {
-            "runtime": "@vercel/node@5.4.0",
-            "maxDuration": 60
-        },
-        "api/track/[[...action]].ts": {
-            "runtime": "@vercel/node@5.4.0",
-            "maxDuration": 60
-        },
-        "api/votes/[[...action]].ts": {
-            "runtime": "@vercel/node@5.4.0",
-            "maxDuration": 60
-        },
-        "api/system/[[...path]].ts": {
-            "runtime": "@vercel/node@5.4.0",
-            "maxDuration": 60
-        },
-        "api/auth/[[...path]].ts": {
-            "runtime": "@vercel/node@5.4.0",
-            "maxDuration": 60
-        },
-        "api/cron/weekly-stats.ts": {
+        "api/**/*.ts": {
             "runtime": "@vercel/node@5.4.0",
             "maxDuration": 60
         }

@@ -23,8 +23,7 @@ const TRACKED: Array<{ key: string; label: string }> = [
 ];
 
 export default route({ methods: ['GET'], auth: false }, async (req: AuthedRequest, res) => {
-    const pathRaw = req.query.path || [];
-    const path = Array.isArray(pathRaw) ? pathRaw : [pathRaw];
+    const path = req.segments;
     const method = req.method;
 
     console.log(`[api/system] ${method} /${path.join('/')}`);

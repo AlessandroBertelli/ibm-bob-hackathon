@@ -25,8 +25,7 @@ import { rateLimit } from '../_lib/ratelimit';
 const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{8,128}$/;
 
 export default route({ methods: ['GET', 'POST'], auth: false }, async (req: AuthedRequest, res) => {
-    const pathRaw = req.query.path || [];
-    const path = Array.isArray(pathRaw) ? pathRaw : [pathRaw];
+    const path = req.segments;
     const method = req.method;
 
     console.log(`[api/sessions] ${method} /${path.join('/')}`);

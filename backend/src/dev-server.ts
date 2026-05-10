@@ -135,19 +135,29 @@ for (const { route, handler, isCatchAll, paramName, originalPath } of discovered
     app.all(route, async (req: Request, res: Response) => {
         try {
             const merged: Record<string, unknown> = { ...(req.query as Record<string, unknown>), ...req.params };
+            let segments: string[] = [];
 
             if (isCatchAll && paramName) {
                 // Express RegExp matches put capture groups in req.params[0], [1], etc.
                 const val = req.params[0];
-                const segments = typeof val === 'string' ? val.split('/').filter(Boolean) : [];
+                segments = typeof val === 'string' ? val.split('/').filter(Boolean) : [];
                 merged[paramName] = segments;
             }
 
+            // Standardize req.query to match Vercel behavior (optional but good for consistency)
             Object.defineProperty(req, 'query', {
                 value: merged,
                 configurable: true,
                 writable: true,
             });
+
+            // Attach 'segments' property as expected by api/_lib/handler.ts
+            Object.defineProperty(req, 'segments', {
+                value: segments,
+                configurable: true,
+                writable: true,
+            });
+
             await handler(req, res);
         } catch (err) {
             console.error(`[dev-server] ${originalPath} threw:`, err);
