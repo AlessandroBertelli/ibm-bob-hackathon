@@ -35,6 +35,7 @@ function getClient(): SupabaseClient {
 
     client = createClient(url, key, {
         auth: { persistSession: false, autoRefreshToken: false },
+        global: { fetch: (...args) => fetch(...args) },
     });
     return client;
 }
