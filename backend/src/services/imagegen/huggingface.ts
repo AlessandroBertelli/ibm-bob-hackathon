@@ -11,7 +11,7 @@ import { ImageBytes } from './index';
 
 const ENDPOINT =
     'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell';
-const TIMEOUT_MS = 50_000;
+const TIMEOUT_MS = 12_000;
 
 export async function generateHuggingFaceImage(prompt: string): Promise<ImageBytes> {
     const token = process.env.HUGGINGFACE_API_TOKEN;

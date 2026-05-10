@@ -12,7 +12,7 @@
 
 import { ImageBytes } from './index';
 
-const TIMEOUT_MS = 50_000;
+const TIMEOUT_MS = 12_000;
 const MODEL = '@cf/black-forest-labs/flux-1-schnell';
 
 export async function generateCloudflareImage(prompt: string): Promise<ImageBytes> {

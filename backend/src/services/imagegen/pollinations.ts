@@ -4,7 +4,7 @@
 
 import { ImageBytes } from './index';
 
-const TIMEOUT_MS = 45_000;
+const TIMEOUT_MS = 12_000;
 
 function buildUrl(prompt: string): string {
     const params = new URLSearchParams({
