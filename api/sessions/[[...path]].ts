@@ -55,6 +55,8 @@ export default route({ methods: ['GET', 'POST'], auth: false }, async (req: Auth
         await rateLimit(req, 'create_session', 10, 3600);
         const { vibe, headcount, dietary, selected_saved_meal_ids } = validateCreateSession(req.body);
 
+        console.log(`[sessions/create] Vibe: "${vibe}", Headcount: ${headcount}, Dietary: [${dietary.join(', ')}]`);
+
         const session = await dataService.createSession({
             host_id: req.user.id,
             vibe,
@@ -62,26 +64,37 @@ export default route({ methods: ['GET', 'POST'], auth: false }, async (req: Auth
             dietary,
         });
 
-        const meals = await buildSessionMeals({
-            userId: req.user.id,
-            sessionId: session.id,
-            selectedSavedMealIds: selected_saved_meal_ids,
-            vibe,
-            headcount,
-            dietary,
-        });
+        console.log(`[sessions/create] Session ${session.id} created in DB, running buildSessionMeals...`);
 
-        await dataService.insertSessionMeals(session.id, meals);
-        await dataService.updateSessionStatus(session.id, 'voting');
+        try {
+            const meals = await buildSessionMeals({
+                userId: req.user.id,
+                sessionId: session.id,
+                selectedSavedMealIds: selected_saved_meal_ids,
+                vibe,
+                headcount,
+                dietary,
+            });
 
-        void dataService.recordEvent({
-            type: 'meal_generated',
-            user_id: req.user.id,
-            metadata: { count: meals.length },
-        });
+            console.log(`[sessions/create] Successfully generated ${meals.length} meals for ${session.id}`);
 
-        const full = await dataService.getSessionWithMeals(session.id);
-        res.status(201).json({ session: full });
+            await dataService.insertSessionMeals(session.id, meals);
+            await dataService.updateSessionStatus(session.id, 'voting');
+
+            void dataService.recordEvent({
+                type: 'meal_generated',
+                user_id: req.user.id,
+                metadata: { count: meals.length },
+            });
+
+            const full = await dataService.getSessionWithMeals(session.id);
+            res.status(201).json({ session: full });
+        } catch (err) {
+            console.error(`[sessions/create] buildSessionMeals failed for ${session.id}:`, err);
+            // Don't leave the session in 'generating' status if AI fails.
+            await dataService.updateSessionStatus(session.id, 'voting').catch(() => {});
+            throw err;
+        }
         return;
     }
 
