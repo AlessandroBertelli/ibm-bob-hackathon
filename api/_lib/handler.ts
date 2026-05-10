@@ -16,6 +16,7 @@ interface RouteOptions {
     methods: Method[];
     auth?: boolean;
 }
+
 export interface AuthedRequest extends VercelRequest {
     user?: AuthUser;
     /**
@@ -70,7 +71,6 @@ export function route(opts: RouteOptions, handler: RouteHandler) {
             authed.segments = extractSegments(url, prefix);
 
             if (!opts.methods.includes(req.method as Method)) {
-...
                 res.setHeader('Allow', opts.methods.join(', '));
                 res.status(405).json({ error: `Method ${req.method} not allowed` });
                 return;
@@ -82,7 +82,6 @@ export function route(opts: RouteOptions, handler: RouteHandler) {
                 enforceBodyLimit(req.headers as Record<string, string | string[] | undefined>);
             }
 
-            const authed = req as AuthedRequest;
             if (opts.auth) {
                 const token = extractToken(req.headers.authorization);
                 if (!token) {
