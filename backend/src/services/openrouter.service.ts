@@ -10,7 +10,7 @@ import { ChatMessage } from '../types/ai.types';
 import { ServiceUnavailableError, InternalServerError } from '../utils/errors.util';
 
 const ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
-const TIMEOUT_MS = 45_000;
+const TIMEOUT_MS = 12_000;
 
 interface ChatOptions {
     messages: ChatMessage[];
