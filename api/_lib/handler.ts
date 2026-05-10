@@ -59,16 +59,35 @@ export function route(opts: RouteOptions, handler: RouteHandler) {
             // Vercel populates req.url with the full path including /api.
             const url = req.url || '';
             let prefix = '';
-            if (url.startsWith('/api/sessions')) prefix = '/api/sessions';
-            else if (url.startsWith('/api/votes')) prefix = '/api/votes';
-            else if (url.startsWith('/api/track')) prefix = '/api/track';
-            else if (url.startsWith('/api/system')) prefix = '/api/system';
-            else if (url.startsWith('/api/auth')) prefix = '/api/auth';
-            else if (url.startsWith('/api/saved-meals')) prefix = '/api/saved-meals';
-            else if (url.startsWith('/api/cron')) prefix = '/api/cron';
+            
+            // Standard prefixes
+            const prefixes = [
+                '/api/sessions',
+                '/api/votes',
+                '/api/track',
+                '/api/system',
+                '/api/auth',
+                '/api/saved-meals',
+                '/api/cron'
+            ];
+
+            for (const p of prefixes) {
+                if (url.startsWith(p)) {
+                    prefix = p;
+                    break;
+                }
+            }
 
             const authed = req as AuthedRequest;
             authed.segments = extractSegments(url, prefix);
+
+            // Fallback for Vercel query-based path if manual parsing fails
+            if (authed.segments.length === 0) {
+                const qPath = req.query.path || req.query.action;
+                if (qPath) {
+                    authed.segments = Array.isArray(qPath) ? qPath : [qPath];
+                }
+            }
 
             if (!opts.methods.includes(req.method as Method)) {
                 res.setHeader('Allow', opts.methods.join(', '));
@@ -113,10 +132,6 @@ export function route(opts: RouteOptions, handler: RouteHandler) {
                 return;
             }
 
-            // Unexpected — log it server-side, but don't echo internals to
-            // anonymous callers in production. (ValidationError extends
-            // ApiError so it's already handled by the branch above; the
-            // earlier defensive re-check here was dead code.)
             console.error('Unhandled error:', err);
             const message = err instanceof Error ? err.message : String(err);
             res.status(500).json({
