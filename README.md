@@ -26,7 +26,7 @@
 | LLM | OpenRouter, free models with automatic rotation |
 | Image gen | Rotation across Pollinations.ai → Hugging Face FLUX.1-schnell → Cloudflare Workers AI |
 | Email | Resend — magic links via Supabase Auth SMTP, weekly digest via the Resend HTTP API |
-| Cron | Vercel Cron (`/api/_cron/weekly-stats`) + pg_cron (daily session expiry) |
+| Cron | Vercel Cron (`/api/cron/weekly-stats`) + pgcron (daily session expiry) |
 | Hosting | Single Vercel project (frontend + serverless API at the same origin) |
 
 No Render, no Express in production, no separate API host.
@@ -95,7 +95,7 @@ Magic-link emails are always sent by Supabase Auth (configured to use Resend SMT
 ## Supabase one-time setup
 
 1. Create a Supabase project, copy the URL, anon key, and service-role key into `.env`.
-2. Run [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql) in the SQL editor (or `supabase db push` with the CLI linked). One file, end-to-end: tables, RLS, RPCs, Realtime publication, Storage bucket, pg_cron cleanup job.
+2. Run [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql) in the SQL editor (or `supabase db push` with the CLI linked). One file, end-to-end: tables, RLS, RPCs, Realtime publication, Storage bucket, pgcron cleanup job.
 3. **Authentication → URL Configuration**: set Site URL to your frontend origin and add `${SITE_URL}/auth/verify` to the redirect allow-list.
 4. **Authentication → Email Templates**: review the magic-link copy.
 5. **Authentication → SMTP Settings**: plug in Resend (or any SMTP provider).
@@ -151,7 +151,7 @@ DELETE /api/auth/account                   delete own account (auth)
 POST   /api/track/visit                    record a landing-page visit
 POST   /api/track/login                    record a successful sign-in
 
-GET    /api/_cron/weekly-stats             Vercel Cron — weekly digest email
+GET    /api/cron/weekly-stats             Vercel Cron — weekly digest email
 ```
 
 Realtime is **not** an HTTP endpoint — the frontend subscribes directly to Supabase channels for `session_meals` and `votes`.
@@ -159,8 +159,8 @@ Realtime is **not** an HTTP endpoint — the frontend subscribes directly to Sup
 ## Operations & observability
 
 - **Service status** — every external call (Supabase RPC, OpenRouter, each image provider, Resend) upserts its last outcome into `service_status` via the `record_service_outcome` RPC. The landing page polls `/api/system/status` and renders coloured dots so the operator sees provider drift at a glance.
-- **Lightweight tracking** — `events` (last 30 days), `aggregated_stats` (lifetime totals), `error_log` (rolling) feed a Monday weekly email digest sent from `/api/_cron/weekly-stats`. The cron is wired in [`vercel.json`](vercel.json) and authenticated with `CRON_SECRET`.
-- **Daily auto-purge** — pg_cron job `atavola-cleanup-expired-sessions` runs at 03:15 UTC and drops sessions older than 30 days; saved meals survive (FK is `ON DELETE SET NULL` so anonymised recipes stay searchable).
+- **Lightweight tracking** — `events` (last 30 days), `aggregated_stats` (lifetime totals), `error_log` (rolling) feed a Monday weekly email digest sent from `/api/cron/weekly-stats`. The cron is wired in [`vercel.json`](vercel.json) and authenticated with `CRON_SECRET`.
+- **Daily auto-purge** — pgcron job `atavola-cleanup-expired-sessions` runs at 03:15 UTC and drops sessions older than 30 days; saved meals survive (FK is `ON DELETE SET NULL` so anonymised recipes stay searchable).
 
 ---
 

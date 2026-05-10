@@ -30,7 +30,7 @@
             "runtime": "@vercel/node@5.4.0",
             "maxDuration": 60
         },
-        "api/_cron/weekly-stats.ts": {
+        "api/cron/weekly-stats.ts": {
             "runtime": "@vercel/node@5.4.0",
             "maxDuration": 60
         }
@@ -43,7 +43,7 @@
     ],
     "crons": [
         {
-            "path": "/api/_cron/weekly-stats",
+            "path": "/api/cron/weekly-stats",
             "schedule": "0 9 * * 1"
         }
     ],

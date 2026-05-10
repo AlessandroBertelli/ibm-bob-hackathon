@@ -1,5 +1,5 @@
 /**
- * GET /api/_cron/weekly-stats — invoked by Vercel Cron once a week.
+ * GET /api/cron/weekly-stats — invoked by Vercel Cron once a week.
  *
  * Schedule lives in vercel.json (default: Monday 09:00 UTC). Vercel signs
  * cron requests with `Authorization: Bearer ${CRON_SECRET}` so we reject

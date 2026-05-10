@@ -12,7 +12,7 @@ Each `*.ts` file in this directory becomes one or more HTTP endpoints, mounted b
 | `votes/[[...action]].ts` | POST | `/api/votes` | Cast Vote, Mint Guest Token |
 | `system/[[...path]].ts` | GET | `/api/system` | Health, Status, AI Health |
 | `auth/[[...path]].ts` | GET, DELETE | `/api/auth` | Me (Profile), Account Deletion |
-| `_cron/weekly-stats.ts` | GET | `/api/_cron/weekly-stats` | Vercel Cron — emails the weekly digest |
+| `cron/weekly-stats.ts` | GET | `/api/cron/weekly-stats` | Vercel Cron — emails the weekly digest |
 
 **Total: 7 Serverless Functions.**
 

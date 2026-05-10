@@ -40,7 +40,7 @@ Total: **$0/month** at hackathon scale.
    - RPCs (`cast_vote`, `ensure_guest`, `check_rate`, `record_service_outcome`, `record_event`, `record_error`, `get_weekly_digest_data`, `cleanup_after_digest`, `list_my_sessions`),
    - the `supabase_realtime` publication for live results,
    - the public-read `meal-images` Storage bucket,
-   - and the daily pg_cron `atavola-cleanup-expired-sessions` job at 03:15 UTC.
+   - and the daily pgcron `atavola-cleanup-expired-sessions` job at 03:15 UTC.
 
 The file is idempotent — running it twice is safe.
 
@@ -146,7 +146,7 @@ HUGGINGFACE_API_TOKEN=
 CLOUDFLARE_ACCOUNT_ID=
 CLOUDFLARE_API_TOKEN=
 
-# Weekly digest email (Vercel Cron → /api/_cron/weekly-stats)
+# Weekly digest email (Vercel Cron → /api/cron/weekly-stats)
 RESEND_API_KEY=
 EMAIL_FROM=atavola <no-reply@atavola.ch>
 CRON_SECRET=
@@ -238,7 +238,7 @@ Magic-link delivery is the silent growth lever — if mail lands in spam, sign-u
 
 5. **Verify**: send a magic-link to a Gmail address and inspect the headers. You want `dkim=pass`, `spf=pass`, `dmarc=pass`. [https://www.mail-tester.com/](https://www.mail-tester.com/) gives a 0–10 score; aim for 9+.
 
-The same Resend domain powers the weekly digest (`/api/_cron/weekly-stats`). `EMAIL_FROM` must use this verified domain or sends bounce silently.
+The same Resend domain powers the weekly digest (`/api/cron/weekly-stats`). `EMAIL_FROM` must use this verified domain or sends bounce silently.
 
 ---
 
@@ -267,7 +267,7 @@ The static landing page, `/about`, `/privacy`, and `/terms` ship with full meta 
 | Function logs say "Refusing to boot: SERVICE_MODE=…" | Vercel env var unset or misspelled | Set `SERVICE_MODE=production` exactly. The hard fail is intentional — see [SECURITY.md](SECURITY.md) #C1. |
 | Magic-link email never arrives for anyone but you | Resend domain not verified | Verify the domain in Resend, then point Supabase SMTP at it. Until verified, only your own address receives mail. |
 | 401 on every call | RLS denies because policies didn't run | Re-apply both migrations — verify policies under `Authentication → Policies`. |
-| `cast_vote` errors with `session_expired` or `session_not_open` | Session is older than 30 days or status moved off `voting` | Hosts create a new session; expiry is enforced server-side and the daily pg_cron purges past it anyway. |
+| `cast_vote` errors with `session_expired` or `session_not_open` | Session is older than 30 days or status moved off `voting` | Hosts create a new session; expiry is enforced server-side and the daily pgcron purges past it anyway. |
 | `cast_vote` errors with `invalid_guest_token` | Guest hasn't been minted | Frontend should call `POST /api/votes/guest` once before voting (it does — clear localStorage and reload if stale). |
 | 429 on rate-limited endpoints | The Postgres rate-limit RPC threw | Check function logs for `[checkRate] RPC failed` warnings. The limiter fails open to avoid locking real users out, but a sustained warning means you're effectively unprotected — fix the underlying DB error. |
 | Generated images broken | Every image provider failed magic-byte sniff or quota | Inspect the function log — provider names + reasons are logged. Most common: wrong CF/HF key, or HF model warming up (just retry). |
