@@ -36,14 +36,14 @@ Reusable React UI.
 | MealsPickerTable.tsx | Picker (max-4 checkboxes) **and** Manage (drag-reorder + swipe-delete) views |
 | SortableMealRow.tsx | dnd-kit `useSortable` wrapper. Whole row is the drag activator (250 ms long-press via the delay sensor) — no separate handle. |
 | SwipeToDeleteRow.tsx | Framer-Motion swipe-left drawer with trash + confirm |
-| DeleteAccountButton.tsx | Two-step confirm flow that calls `DELETE /api/account` and signs out. Saved recipes survive as anonymised rows. |
+| DeleteAccountButton.tsx | Two-step confirm flow that calls `DELETE /api/auth/account` and signs out. Saved recipes survive as anonymised rows. |
 
 ## Landing (`landing/`)
 
 | File | Purpose |
 |---|---|
 | Contributors.tsx | "Made with ❤ & 🍕 @ IBM Bobathon" — three cards, optional photo + LinkedIn. |
-| TechStackStatus.tsx | Stack list with a coloured dot per service, fed by `/api/status`. |
+| TechStackStatus.tsx | Stack list with a coloured dot per service, fed by `/api/system/status`. |
 | PrivacyButton.tsx | Modal with the privacy explainer. |
 
 ## Conventions

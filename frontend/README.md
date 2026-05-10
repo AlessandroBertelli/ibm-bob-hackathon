@@ -58,5 +58,5 @@ The live-results screen uses Supabase Realtime via [`useRealtimeSession`](src/ho
 The landing page has no header. Three sections under the logo:
 
 1. **Contributors** — three cards from [`components/landing/Contributors.tsx`](src/components/landing/Contributors.tsx). Replace placeholder LinkedIn URLs as they come in.
-2. **Tech stack & status** — from [`components/landing/TechStackStatus.tsx`](src/components/landing/TechStackStatus.tsx). Coloured dots are fed by `services/status.service.ts` polling `/api/status`. Resend is listed without a dot — Supabase abstracts SMTP and there's no probe path back.
+2. **Tech stack & status** — from [`components/landing/TechStackStatus.tsx`](src/components/landing/TechStackStatus.tsx). Coloured dots are fed by `services/status.service.ts` polling `/api/system/status`. Resend is listed without a dot — Supabase abstracts SMTP and there's no probe path back.
 3. **Privacy modal** — [`components/landing/PrivacyButton.tsx`](src/components/landing/PrivacyButton.tsx).

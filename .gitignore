@@ -167,6 +167,9 @@ lib-cov/
 # Vercel
 .vercel
 
+# Conductor
+conductor/
+
 # Favicon source bundles — only the unpacked files in /public are needed.
 *.zip
 frontend/public/favicon.zip

@@ -127,9 +127,9 @@ The backend tries the models listed in `OPENROUTER_MODELS` in order. On rate-lim
 ## API surface
 
 ```
-GET    /api/health
-GET    /api/ai/health                      reports SERVICE_MODE + image providers
-GET    /api/status                         per-service rolling outcome snapshot
+GET    /api/system/health                  uptime probe
+GET    /api/system/ai/health               reports SERVICE_MODE + image providers
+GET    /api/system/status                  per-service rolling outcome snapshot
 GET    /api/auth/me                        verify bearer + return profile
 
 GET    /api/sessions/:id                   host view
@@ -146,7 +146,7 @@ POST   /api/saved-meals                    save (auth)
 PATCH  /api/saved-meals/reorder            bulk reorder (auth)
 DELETE /api/saved-meals/:id                remove (auth)
 
-DELETE /api/account                        delete own account (auth)
+DELETE /api/auth/account                   delete own account (auth)
 
 POST   /api/track/visit                    record a landing-page visit
 POST   /api/track/login                    record a successful sign-in
@@ -158,7 +158,7 @@ Realtime is **not** an HTTP endpoint — the frontend subscribes directly to Sup
 
 ## Operations & observability
 
-- **Service status** — every external call (Supabase RPC, OpenRouter, each image provider, Resend) upserts its last outcome into `service_status` via the `record_service_outcome` RPC. The landing page polls `/api/status` and renders coloured dots so the operator sees provider drift at a glance.
+- **Service status** — every external call (Supabase RPC, OpenRouter, each image provider, Resend) upserts its last outcome into `service_status` via the `record_service_outcome` RPC. The landing page polls `/api/system/status` and renders coloured dots so the operator sees provider drift at a glance.
 - **Lightweight tracking** — `events` (last 30 days), `aggregated_stats` (lifetime totals), `error_log` (rolling) feed a Monday weekly email digest sent from `/api/_cron/weekly-stats`. The cron is wired in [`vercel.json`](vercel.json) and authenticated with `CRON_SECRET`.
 - **Daily auto-purge** — pg_cron job `atavola-cleanup-expired-sessions` runs at 03:15 UTC and drops sessions older than 30 days; saved meals survive (FK is `ON DELETE SET NULL` so anonymised recipes stay searchable).
 

@@ -21,8 +21,8 @@ The real `dataService` and `aiService` exports both have the same TypeScript sur
 
 ### Helpers on `dataService` worth knowing
 
-- `deleteAuthUser(userId)` — used by `DELETE /api/account`. Deletes the auth user; FK on `saved_meals.user_id` is `ON DELETE SET NULL`, so saved recipes survive as anonymised rows.
-- `recordServiceOutcome(service, ok, detail)` — every external call (LLM, each image provider, Resend) upserts into `service_status`. `listServiceStatus()` reads it for `/api/status`.
+- `deleteAuthUser(userId)` — used by `DELETE /api/auth/account`. Deletes the auth user; FK on `saved_meals.user_id` is `ON DELETE SET NULL`, so saved recipes survive as anonymised rows.
+- `recordServiceOutcome(service, ok, detail)` — every external call (LLM, each image provider, Resend) upserts into `service_status`. `listServiceStatus()` reads it for `/api/system/status`.
 - `recordEvent(kind, payload)` / `recordError(area, message, context)` — lightweight tracking. Trimmed by `cleanupAfterDigest`.
 - `getWeeklyDigestData()` / `cleanupAfterDigest()` — used only by `api/_cron/weekly-stats.ts`.
 - `listMySessions(userId)` — `GET /api/sessions/mine`, with voter counts.

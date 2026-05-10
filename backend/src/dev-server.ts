@@ -10,6 +10,7 @@
  *   - api/foo/index.ts    → /api/foo
  *   - api/foo/[id].ts     → /api/foo/:id
  *   - api/foo/[id]/bar.ts → /api/foo/:id/bar
+ *   - api/[[...path]].ts  → /api/* (Optional Catch-All)
  * Subdirectories starting with `_` are skipped (helpers).
  */
 
@@ -34,9 +35,6 @@ app.use(
         credentials: true,
     })
 );
-// Match the production cap (api/_lib/safety.ts MAX_BODY_BYTES = 100 KB) so
-// behaviour parity holds between dev and prod — a payload that 413s on
-// Vercel must also 413 in dev, otherwise we ship surprises.
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
@@ -45,14 +43,32 @@ app.use((req, _res, next) => {
     next();
 });
 
-type Discovered = { route: string; handler: (req: Request, res: Response) => unknown };
+type Discovered = { 
+    route: string | RegExp; 
+    handler: (req: Request, res: Response) => unknown;
+    isCatchAll: boolean;
+    paramName?: string;
+    originalPath: string;
+};
 const discovered: Discovered[] = [];
 
-function expressPathFromFile(rel: string): string {
-    // rel is like "auth/me.ts" or "sessions/[id]/regenerate.ts"
+function expressPathFromFile(rel: string): Discovered['route'] | { route: RegExp; isCatchAll: true; paramName: string } {
     const noExt = rel.replace(/\.ts$/, '');
     const parts = noExt.split(path.sep);
     if (parts[parts.length - 1] === 'index') parts.pop();
+    
+    const last = parts[parts.length - 1];
+    if (last && last.startsWith('[[...') && last.endsWith(']]')) {
+        const paramName = last.slice(5, -2);
+        parts.pop();
+        const prefix = '/api/' + parts.join('/');
+        // Escape prefix for RegExp
+        const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // Match prefix, prefix/, or prefix/anything
+        const regex = new RegExp(`^${escapedPrefix}(?:/(.*))?$`);
+        return { route: regex, isCatchAll: true, paramName };
+    }
+
     return (
         '/api/' +
         parts
@@ -69,7 +85,7 @@ function discover(dir: string, base = ''): void {
         if (statSync(full).isDirectory()) {
             discover(full, rel);
         } else if (entry.endsWith('.ts')) {
-            const route = expressPathFromFile(rel);
+            const res = expressPathFromFile(rel);
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const mod = require(full);
             const handler = mod.default;
@@ -77,40 +93,56 @@ function discover(dir: string, base = ''): void {
                 console.warn(`[dev-server] ${rel} has no default export, skipping`);
                 continue;
             }
-            discovered.push({ route, handler });
+
+            if (typeof res === 'object' && 'isCatchAll' in res) {
+                discovered.push({ 
+                    route: res.route, 
+                    handler, 
+                    isCatchAll: true, 
+                    paramName: res.paramName,
+                    originalPath: '/api/' + rel.replace(/\.ts$/, '')
+                });
+            } else {
+                discovered.push({ 
+                    route: res as string, 
+                    handler, 
+                    isCatchAll: false,
+                    originalPath: res as string
+                });
+            }
         }
     }
 }
 
 discover(API_DIR);
 
-// Sort by specificity so literal segments win over `:param` segments.
-// Express picks the first matching route, so /sessions/token/:token must
-// be mounted before /sessions/:id otherwise the latter swallows the former.
-function specificity(route: string): number[] {
-    const segs = route.split('/').filter(Boolean);
-    // Fewer parameter segments = more specific = sort earlier.
-    const paramCount = segs.filter((s) => s.startsWith(':')).length;
-    return [paramCount, -segs.length];
+function getSpecificity(d: Discovered): number {
+    if (d.isCatchAll) return 2;
+    if (typeof d.route === 'string' && d.route.includes(':')) return 1;
+    return 0;
 }
 
 discovered.sort((a, b) => {
-    const sa = specificity(a.route);
-    const sb = specificity(b.route);
-    for (let i = 0; i < sa.length; i++) {
-        if (sa[i] !== sb[i]) return sa[i] - sb[i];
-    }
-    return a.route.localeCompare(b.route);
+    const specA = getSpecificity(a);
+    const specB = getSpecificity(b);
+    if (specA !== specB) return specA - specB;
+    // Same specificity: longer route (more segments) first
+    return b.originalPath.length - a.originalPath.length || a.originalPath.localeCompare(b.originalPath);
 });
 
-const mounted: { route: string }[] = [];
-for (const { route, handler } of discovered) {
-    app.all(route.replace(/\/$/, '') || '/', async (req: Request, res: Response) => {
+const mounted: { route: string; original: string }[] = [];
+for (const { route, handler, isCatchAll, paramName, originalPath } of discovered) {
+    app.all(route, async (req: Request, res: Response) => {
         try {
-            // Vercel merges path params into req.query; Express splits them and
-            // (in v5) makes req.query a frozen accessor. Define our own merged
-            // `query` property the handler reads from.
-            const merged = { ...(req.query as Record<string, unknown>), ...req.params };
+            const merged: Record<string, unknown> = { ...(req.query as Record<string, unknown>), ...req.params };
+
+            if (isCatchAll && paramName) {
+                // Express RegExp matches put capture groups in req.params[0], [1], etc.
+                const val = req.params[0];
+                const segments = typeof val === 'string' ? val.split('/').filter(Boolean) : [];
+                merged[paramName] = segments;
+            }
+
             Object.defineProperty(req, 'query', {
                 value: merged,
                 configurable: true,
@@ -118,7 +150,7 @@ for (const { route, handler } of discovered) {
             });
             await handler(req, res);
         } catch (err) {
-            console.error(`[dev-server] ${route} threw:`, err);
+            console.error(`[dev-server] ${originalPath} threw:`, err);
             if (!res.headersSent) {
                 res.status(500).json({
                     error: 'Internal Server Error',
@@ -127,7 +159,10 @@ for (const { route, handler } of discovered) {
             }
         }
     });
-    mounted.push({ route });
+    mounted.push({ 
+        route: typeof route === 'string' ? route : route.source,
+        original: originalPath
+    });
 }
 
 app.use((req, res) => {
@@ -141,7 +176,7 @@ app.listen(PORT, () => {
     console.log(`\n🍕 atavola dev server on http://localhost:${PORT} (${serviceMode} mode)`);
     console.log('Mounted routes:');
     for (const r of mounted) {
-        console.log(`  ${r.route}`);
+        console.log(`  ${r.original} -> ${r.route}`);
     }
     if (isUsingMockServices) {
         console.log('\n────────────────────────────────────────────');
@@ -154,5 +189,3 @@ app.listen(PORT, () => {
 
 process.on('SIGTERM', () => process.exit(0));
 process.on('SIGINT', () => process.exit(0));
-
-// Made with Bob

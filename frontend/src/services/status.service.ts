@@ -12,7 +12,7 @@ export interface ServiceStatus {
 }
 
 export const fetchStatus = async (): Promise<ServiceStatus[]> => {
-    const { data } = await api.get<{ services: ServiceStatus[] }>('/status');
+    const { data } = await api.get<{ services: ServiceStatus[] }>('/system/status');
     return data.services;
 };
 

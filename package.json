@@ -5,7 +5,7 @@
     "private": true,
     "scripts": {
         "install:all": "npm install && cd frontend && npm install",
-        "dev:mock": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\" \"npm:dev:backend:mock\" \"npm:dev:frontend\"",
+        "dev:mock": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\" \"npm:dev:backend:mock\" \"npm:dev:frontend:mock\"",
         "dev:test": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\" \"npm:dev:backend:test\" \"npm:dev:frontend\"",
         "dev:prod": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\" \"npm:dev:backend:prod\" \"npm:dev:frontend\"",
         "dev:backend": "npm run dev:backend:mock",
@@ -13,6 +13,7 @@
         "dev:backend:test": "SERVICE_MODE=test ts-node-dev --respawn --transpile-only --project tsconfig.json backend/src/dev-server.ts",
         "dev:backend:prod": "SERVICE_MODE=production ts-node-dev --respawn --transpile-only --project tsconfig.json backend/src/dev-server.ts",
         "dev:frontend": "cd frontend && npm run dev",
+        "dev:frontend:mock": "VITE_SERVICE_MODE=mock cd frontend && npm run dev",
         "build": "cd frontend && npm install && npm run build",
         "typecheck": "npm run typecheck:server && npm run typecheck:frontend",
         "typecheck:server": "tsc --noEmit",
