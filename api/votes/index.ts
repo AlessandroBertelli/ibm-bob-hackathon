@@ -1,1 +1,1 @@
-export { default } from './[[...action]]';
+export { default } from './[...action]';
