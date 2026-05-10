@@ -1,7 +1,7 @@
 // Tech-stack & live-services status block on Landing.
 //
 // The "Live services" rows have a coloured dot driven by the most recent
-// real-world outcome (see /api/status). The "Stack" rows are static — no
+// real-world outcome (see /api/system/status). The "Stack" rows are static — no
 // dot, just attribution.
 
 import { useEffect, useState } from 'react';

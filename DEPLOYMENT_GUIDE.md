@@ -165,18 +165,23 @@ Notes:
 
 Click "Deploy". ~1–2 minutes. Note the URL (e.g. `https://atavola.vercel.app`).
 
-### 4.4 Loop the URL back to Supabase
+### 4.4 Custom Domain & DNS
 
-Go back to **Supabase → Authentication → URL Configuration**: set Site URL and Redirect URL to the Vercel URL.
+If you have a domain like `atavola.ch`:
+1. **Vercel → Settings → Domains**: Add `atavola.ch`.
+2. **DNS Records**: Vercel will provide an **A record** (for `@`) and a **CNAME record** (for `www`). Set these in your registrar's dashboard (e.g., Cloudflare, Namecheap).
+3. **Verify**: Once the SSL certificate is issued by Vercel, the domain status will turn green.
 
-If you later add a custom domain, repeat this step with the new domain.
+### 4.5 Loop the URL back to Supabase
+
+Go back to **Supabase → Authentication → URL Configuration**: ensure the **Site URL** and **Redirect URLs** use `https://atavola.ch`. If you don't do this, users will be redirected to the default `vercel.app` domain instead of your custom one.
 
 ---
 
 ## 5. Smoke test
 
 ```bash
-curl https://your-app.vercel.app/api/health
+curl https://your-app.vercel.app/api/system/health
 # → {"status":"ok","mode":"production",...}
 ```
 

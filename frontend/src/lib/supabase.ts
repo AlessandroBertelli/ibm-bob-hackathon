@@ -25,7 +25,9 @@ if (isProdBuild && (!url || !anonKey)) {
     );
 }
 
-export const isMockMode = !isProdBuild && (!url || !anonKey);
+export const isMockMode =
+    import.meta.env.VITE_SERVICE_MODE === 'mock' ||
+    (!isProdBuild && (!url || !anonKey));
 
 function createMockClient(): SupabaseClient {
     const noop = () => {};

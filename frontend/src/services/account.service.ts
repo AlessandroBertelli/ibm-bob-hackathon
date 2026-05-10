@@ -3,7 +3,7 @@
 import api from './api';
 
 export const deleteAccount = async (): Promise<void> => {
-    await api.delete('/account');
+    await api.delete('/auth/account');
 };
 
 // Made with Bob

@@ -27,7 +27,7 @@ The file is idempotent (`create … if not exists`, `create or replace`, `drop p
 | `guests` | Anonymous voters. `guest_token` proves identity for `cast_vote`. |
 | `votes` | Yes / no per (guest, meal). |
 | `rate_log` | Sliding-window counters keyed by `(actor, scope)` for `check_rate`. |
-| `service_status` | Last outcome per external service (Supabase / OpenRouter / each image provider / Resend). Powers `/api/status`. |
+| `service_status` | Last outcome per external service (Supabase / OpenRouter / each image provider / Resend). Powers `/api/system/status`. |
 | `events` | Lightweight tracking — visits, logins, sessions, votes, saves. Trimmed to last 30 days. |
 | `aggregated_stats` | Lifetime counters that survive `cleanup_after_digest`. |
 | `error_log` | Recent backend errors; flushed each Monday after the digest emails. |
