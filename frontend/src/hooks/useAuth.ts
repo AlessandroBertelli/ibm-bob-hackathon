@@ -7,7 +7,7 @@
 //     localStorage. Without this the Header keeps showing "Anmelden" until
 //     the next page refresh.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import type { Session as SupabaseSession } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import type { AuthUser } from '../types';
@@ -50,6 +50,8 @@ export const useAuth = (): UseAuthReturn => {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    const trackedLogin = React.useRef(false);
+
     useEffect(() => {
         let cancelled = false;
 
@@ -76,8 +78,12 @@ export const useAuth = (): UseAuthReturn => {
             if (getMockToken()) return;
             setUser(userFromSession(session));
             // Phase B tracking — fire-and-forget on every successful sign-in.
-            if (event === 'SIGNED_IN' && session?.user) {
+            // Use a ref so token refreshes ('SIGNED_IN' triggered again) don't spam.
+            if (event === 'SIGNED_IN' && session?.user && !trackedLogin.current) {
+                trackedLogin.current = true;
                 void trackLogin();
+            } else if (event === 'SIGNED_OUT') {
+                trackedLogin.current = false;
             }
         });
 
