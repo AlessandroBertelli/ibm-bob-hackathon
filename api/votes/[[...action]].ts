@@ -13,8 +13,11 @@ import { rateLimit } from '../_lib/ratelimit';
 const TEN_MINUTES = 600;
 
 export default route({ methods: ['POST'], auth: false }, async (req: AuthedRequest, res) => {
-    const actionRaw = req.query.action;
-    const action = Array.isArray(actionRaw) ? actionRaw[0] : actionRaw;
+    const actionRaw = req.query.action || [];
+    const actionSegments = Array.isArray(actionRaw) ? actionRaw : [actionRaw];
+    const action = actionSegments[0];
+
+    console.log(`[api/votes] POST /${actionSegments.join('/')}`);
 
     // --- POST /api/votes/guest ---
     if (action === 'guest') {

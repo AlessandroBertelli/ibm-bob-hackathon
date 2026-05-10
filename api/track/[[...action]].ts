@@ -11,8 +11,11 @@ import { AuthenticationError, ValidationError } from '../../backend/src/utils/er
 import { rateLimit } from '../_lib/ratelimit';
 
 export default route({ methods: ['POST'], auth: false }, async (req: AuthedRequest, res) => {
-    const actionRaw = req.query.action;
-    const action = Array.isArray(actionRaw) ? actionRaw[0] : actionRaw;
+    const actionRaw = req.query.action || [];
+    const actionSegments = Array.isArray(actionRaw) ? actionRaw : [actionRaw];
+    const action = actionSegments[0];
+
+    console.log(`[api/track] POST /${actionSegments.join('/')}`);
 
     // --- POST /api/track/visit ---
     if (action === 'visit') {

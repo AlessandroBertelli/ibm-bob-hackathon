@@ -23,7 +23,11 @@ const TRACKED: Array<{ key: string; label: string }> = [
 ];
 
 export default route({ methods: ['GET'], auth: false }, async (req: AuthedRequest, res) => {
-    const path = req.query.path as string[] || [];
+    const pathRaw = req.query.path || [];
+    const path = Array.isArray(pathRaw) ? pathRaw : [pathRaw];
+    const method = req.method;
+
+    console.log(`[api/system] ${method} /${path.join('/')}`);
 
     // --- GET /api/system/health ---
     if (path[0] === 'health' && path.length === 1) {
