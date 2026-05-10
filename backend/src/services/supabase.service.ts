@@ -465,9 +465,15 @@ export async function uploadMealImage(
     contentType = 'image/jpeg'
 ): Promise<string> {
     const supa = getClient();
-    const { error } = await supa.storage
+    const uploadPromise = supa.storage
         .from('meal-images')
         .upload(path, bytes, { contentType, upsert: true });
+
+    const timeoutPromise = new Promise<any>((_, reject) =>
+        setTimeout(() => reject(new Error('uploadMealImage timed out after 15s')), 15000)
+    );
+
+    const { error } = await Promise.race([uploadPromise, timeoutPromise]);
     if (error) {
         throw new InternalServerError(`Failed to upload image: ${error.message}`);
     }
@@ -476,3 +482,4 @@ export async function uploadMealImage(
 }
 
 // Made with Bob
+Bob

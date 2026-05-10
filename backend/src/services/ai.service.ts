@@ -263,23 +263,35 @@ export async function generateAssembledMeals(opts: {
         opts.excludedTitles ?? []
     );
 
-    const assembled = await Promise.all(
-        generated.map(async (m, i) => {
+    const assembled: AssembledMeal[] = [];
+    for (let i = 0; i < generated.length; i++) {
+        const m = generated[i];
+        try {
             const image_url = await generateAndStoreMealImage(
                 opts.sessionId,
                 `gen-${i}`,
                 m.title,
                 m.description
             );
-            return {
+            assembled.push({
                 title: m.title,
                 description: m.description,
                 image_url,
                 ingredients: scaleIngredients(m.ingredients, opts.headcount),
                 instructions: m.instructions ?? [],
-            } satisfies AssembledMeal;
-        })
-    );
+            } satisfies AssembledMeal);
+        } catch (err) {
+            console.error(`[ai.service] Failed to generate/store image for meal ${i}:`, err);
+            // Fallback to placeholder or null to ensure the session still completes
+            assembled.push({
+                title: m.title,
+                description: m.description,
+                image_url: null,
+                ingredients: scaleIngredients(m.ingredients, opts.headcount),
+                instructions: m.instructions ?? [],
+            } satisfies AssembledMeal);
+        }
+    }
 
     return assembled;
 }
