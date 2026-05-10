@@ -77,14 +77,6 @@ export const useAuth = (): UseAuthReturn => {
             // Don't override the mock-mode user.
             if (getMockToken()) return;
             setUser(userFromSession(session));
-            // Phase B tracking — fire-and-forget on every successful sign-in.
-            // Use a ref so token refreshes ('SIGNED_IN' triggered again) don't spam.
-            if (event === 'SIGNED_IN' && session?.user && !trackedLogin.current) {
-                trackedLogin.current = true;
-                void trackLogin();
-            } else if (event === 'SIGNED_OUT') {
-                trackedLogin.current = false;
-            }
         });
 
         // Cross-instance updates for mock-mode sign-in / sign-out.
