@@ -1,6 +1,6 @@
-# 🍕 Group Food Tinder
+# atavola
 
-> A collaborative food decision-making app that helps groups decide where to eat using a Tinder-style swipe interface.
+> Group meal planning via Tinder-style swiping. Hosts pick a vibe, AI generates four meal ideas, the group votes on a public link, results re-sort live.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
@@ -8,636 +8,188 @@
 
 ---
 
-## 📖 Table of Contents
+## What it is
 
-- [Overview](#-overview)
-- [Quick Start](#-quick-start)
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Project Structure](#-project-structure)
-- [Service Modes](#-service-modes)
-- [Setup Guide](#-setup-guide)
-- [Development](#-development)
-- [API Documentation](#-api-documentation)
-- [Deployment](#-deployment)
-- [Contributing](#-contributing)
-- [License](#-license)
+- **Host flow** — sign in via magic link, set a vibe + headcount + diet flags, optionally pre-select up to 4 meals from "My Food", review the AI-generated cards and share a public voting link (native share sheet, copy link, or QR).
+- **Guest flow** — open the link, swipe through the 4 cards (right = like, left = dislike), watch the live results re-rank in real time. Heart any card to save it to a personal profile (sign-in prompt if anonymous).
+- **No winner state** — the results screen never locks. Anyone with the link keeps voting; the ranking just keeps updating.
 
 ---
 
-## 🎯 Overview
+## Tech stack
 
-Group Food Tinder solves the age-old problem of **"Where should we eat?"** by allowing group members to swipe through restaurant options. When everyone in the group swipes right on the same restaurant, it's a match! 🎉
+| Layer | Stack |
+|---|---|
+| Frontend | React 19, TypeScript, Vite, Tailwind v4, Framer Motion, dnd-kit, Supabase JS |
+| Backend (Vercel serverless) | TypeScript handlers in `api/`, services in `backend/src/` |
+| Auth + DB + Realtime + Storage | Supabase (Postgres + Auth + Realtime + Storage) |
+| LLM | OpenRouter, free models with automatic rotation |
+| Image gen | Rotation across Pollinations.ai → Hugging Face FLUX.1-schnell → Cloudflare Workers AI |
+| Email | Resend — magic links via Supabase Auth SMTP, weekly digest via the Resend HTTP API |
+| Cron | Vercel Cron (`/api/_cron/weekly-stats`) + pg_cron (daily session expiry) |
+| Hosting | Single Vercel project (frontend + serverless API at the same origin) |
 
-### The Problem
-- Groups struggle to agree on where to eat
-- Too many options lead to decision paralysis
-- Traditional voting is tedious and time-consuming
-
-### The Solution
-- **Tinder-style interface** - Swipe right (yes) or left (no)
-- **AI-powered recommendations** - Personalized meal suggestions
-- **Real-time matching** - Instant notifications when consensus is reached
-- **Magic link authentication** - No passwords needed
-
----
-
-## 🚀 Quick Start
-
-Get started in **under 2 minutes** with zero configuration!
-
-### Prerequisites
-- Node.js 18+ and npm
-- Git
-
-### Installation
-
-```bash
-# 1. Clone the repository
-git clone <repository-url>
-cd ibm-bob-hackathon
-
-# 2. Install all dependencies (backend + frontend)
-npm run install:all
-
-# 3. Start both servers in mock mode (no API keys needed!)
-npm run dev:mock
-```
-
-**That's it!** 🎉
-
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:3000
-
-The app runs in **mock mode** by default with:
-- ✅ No API keys required
-- ✅ No external services needed
-- ✅ Works completely offline
-- ✅ Pre-loaded with 20 sample restaurants
-- ✅ Perfect for development and testing
+No Render, no Express in production, no separate API host.
 
 ---
 
-## 🌟 Features
+## Project layout
 
-### Core Features
-- 🔐 **Magic Link Authentication** - Passwordless email login
-- 👥 **Group Session Management** - Create and share voting sessions
-- 🎴 **Tinder-Style Swipe Interface** - Intuitive card-based voting
-- 🤖 **AI-Powered Recommendations** - OpenAI-generated meal suggestions
-- 📊 **Real-Time Progress Tracking** - Live voting status updates
-- 🏆 **Automatic Winner Detection** - Smart consensus algorithm
-- 📧 **Email Notifications** - Magic links and session invites
-- 📱 **Responsive Design** - Works on mobile and desktop
+```
+.
+├── api/                   Vercel serverless functions, deployed at /api/*
+│   ├── _lib/handler.ts    Shared error / auth / method-gating wrapper
+│   └── ...                One file per route (Vercel filesystem routing)
+├── backend/
+│   └── src/
+│       ├── services/      LLM, image-gen, Supabase, mock implementations
+│       ├── types/
+│       ├── utils/
+│       └── dev-server.ts  Local-only Express shim that mounts api/ handlers
+├── frontend/              React app (Vite)
+│   └── public/            Static assets + marketing pages — about.html,
+│                          privacy.html, terms.html (served at clean URLs),
+│                          plus robots.txt / sitemap.xml / llms.txt /
+│                          humans.txt / og.svg / .well-known/security.txt
+├── supabase/
+│   └── migrations/        SQL schema, RLS, RPCs, Realtime publication
+├── .env.example           Single source of truth for env-var names
+├── package.json           Root deps for API functions + dev orchestration
+├── tsconfig.json          Covers api/ + backend/src/
+├── vercel.json            Build + functions config
+├── README.md              ← you are here
+├── DEPLOYMENT_GUIDE.md    Step-by-step Vercel + Supabase deploy
+├── DEPLOYMENT_CONFIG.md   Env-var tracker (no secrets committed)
+└── SECURITY.md            Threat model + defenses + operator responsibilities
+```
 
-### User Flow
-1. **Host creates session** - Set vibe, headcount, dietary restrictions
-2. **AI generates meals** - Personalized restaurant suggestions
-3. **Share voting link** - Invite group members
-4. **Everyone swipes** - Vote yes/no on each option
-5. **Winner announced** - When consensus is reached
+The `frontend/` and `backend/` folders stay split for clarity. They share one Vercel deployment.
 
 ---
 
-## 🛠️ Tech Stack
+## Quick start
 
-### Frontend
-| Technology | Purpose |
-|------------|---------|
-| **React 18** | UI library |
-| **TypeScript** | Type safety |
-| **Vite** | Build tool & dev server |
-| **Tailwind CSS** | Styling framework |
-| **Framer Motion** | Animations |
-| **React Router** | Client-side routing |
-| **Axios** | HTTP client |
-| **React Hot Toast** | Notifications |
-
-### Backend
-| Technology | Purpose |
-|------------|---------|
-| **Node.js** | Runtime environment |
-| **Express.js** | Web framework |
-| **TypeScript** | Type safety |
-| **Firebase Admin** | Authentication & database |
-| **OpenAI API** | AI meal generation |
-| **Nodemailer** | Email service |
-| **JWT** | Token authentication |
-
----
-
-## 📁 Project Structure
-
-```
-ibm-bob-hackathon/
-├── frontend/                 # React frontend application
-│   ├── src/
-│   │   ├── components/      # Reusable UI components
-│   │   ├── pages/           # Page components
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── services/        # API service layer
-│   │   ├── types/           # TypeScript type definitions
-│   │   └── utils/           # Utility functions
-│   ├── public/              # Static assets
-│   └── package.json
-│
-├── backend/                  # Node.js backend API
-│   ├── src/
-│   │   ├── controllers/     # Request handlers
-│   │   ├── routes/          # API route definitions
-│   │   ├── services/        # Business logic
-│   │   │   └── mock/        # Mock service implementations
-│   │   ├── middleware/      # Express middleware
-│   │   ├── types/           # TypeScript interfaces
-│   │   └── utils/           # Utility functions
-│   ├── .env                 # Environment variables (mock defaults)
-│   └── package.json
-│
-├── .gitignore               # Root ignore rules
-├── package.json             # Root package with scripts
-└── README.md                # This file
-```
-
----
-
-## 🎭 Service Modes
-
-The backend supports three modes to suit different development needs:
-
-### 1. 🧪 Mock Mode (Default)
-**Perfect for: Development, testing, demos**
-
-```bash
-npm run dev:mock
-```
-
-**Features:**
-- Zero configuration required
-- In-memory mock services
-- 20 pre-loaded sample restaurants
-- Console-logged emails
-- No API keys needed
-- Data resets on restart
-
-### 2. 🔧 Test Mode
-**Perfect for: Integration testing with real services**
-
-```bash
-npm run dev:test
-```
-
-**Features:**
-- Real external APIs (OpenAI, Firebase, SMTP)
-- Persistent data in Firebase
-- Actual email delivery
-- Requires API keys
-
-### 3. 🚀 Production Mode
-**Perfect for: Deployment**
-
-```bash
-npm run dev:prod
-```
-
-**Features:**
-- Full production configuration
-- All services operational
-- Optimized performance
-- Requires all credentials
-
-### Switching Modes
-
-**Option 1: Root-level scripts (Recommended)**
-```bash
-npm run dev:mock    # Mock mode
-npm run dev:test    # Test mode
-npm run dev:prod    # Production mode
-```
-
-**Option 2: Edit backend/.env**
-```env
-SERVICE_MODE=mock   # or 'test' or 'production'
-```
-
-**Option 3: Backend-only scripts**
-```bash
-cd backend
-npm run dev:mock    # Force mock mode
-npm run dev:test    # Force test mode
-npm run dev:prod    # Force production mode
-```
-
----
-
-## 📚 Setup Guide
-
-### Mock Mode Setup (Recommended for Development)
-
-**No setup required!** Just run:
 ```bash
 npm run install:all
-npm run dev:mock
+npm run dev:mock            # in-memory data, no keys needed, no real email
 ```
 
-### Test/Production Mode Setup
+Frontend at http://localhost:5173, API at http://localhost:3000/api. Sign in with any email — the mock backend trusts whatever you type.
 
-For full functionality with real services, you'll need:
-
-#### 1. Firebase Setup
-1. Create project at [Firebase Console](https://console.firebase.google.com)
-2. Enable Realtime Database
-3. Go to Project Settings → Service Accounts
-4. Generate new private key
-5. Add credentials to `backend/.env`
-
-#### 2. OpenAI Setup
-1. Get API key from [OpenAI Platform](https://platform.openai.com)
-2. Add to `backend/.env`:
-   ```env
-   OPENAI_API_KEY=your_key_here
-   ```
-
-#### 3. Email Setup (Gmail Example)
-1. Enable 2FA on Google account
-2. Generate App Password at [Google Account](https://myaccount.google.com/apppasswords)
-3. Add to `backend/.env`:
-   ```env
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
-   SMTP_USER=your_email@gmail.com
-   SMTP_PASS=your_app_password
-   ```
-
-#### 4. Environment Variables
-
-**Backend (.env)**
-```env
-# Server Configuration
-PORT=3000
-NODE_ENV=development
-FRONTEND_URL=http://localhost:5173
-
-# Service Mode
-SERVICE_MODE=mock  # or 'test' or 'production'
-
-# Firebase Admin SDK (for test/production mode)
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_PRIVATE_KEY="your_private_key"
-FIREBASE_CLIENT_EMAIL=your_client_email
-
-# OpenAI (for test/production mode)
-OPENAI_API_KEY=your_openai_api_key
-
-# Email (for test/production mode)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASS=your_app_password
-
-# JWT Secrets
-JWT_SECRET=your_jwt_secret_change_in_production
-MAGIC_LINK_SECRET=your_magic_link_secret
-```
-
-**Frontend (.env)**
-```env
-VITE_API_URL=http://localhost:3000/api
-```
-
-For detailed setup instructions, see:
-- [Backend Setup Guide](backend/SETUP.md)
-- [Mock Services Documentation](backend/src/services/mock/README.md)
+For real services, copy `.env.example` to `.env`, fill in Supabase + OpenRouter (and optionally HF + Cloudflare for image fallbacks), then `npm run dev:prod`.
 
 ---
 
-## 💻 Development
+## Service modes
 
-### Root-Level Scripts (Recommended)
+The backend reads `SERVICE_MODE`:
 
-Run these from the project root to control both backend and frontend:
+- `mock` — no external services, in-memory data, deterministic placeholder images. The frontend's Supabase client is stubbed when its env vars are absent, so no network calls leak. Auth is by `Authorization: Bearer mock:<email>`.
+- `test` — real Supabase + OpenRouter + image providers, intended for staging.
+- `production` — full prod behaviour.
 
-#### Installation
-```bash
-npm run install:all          # Install all dependencies
+Magic-link emails are always sent by Supabase Auth (configured to use Resend SMTP). The backend only verifies bearer tokens for protected routes; it never issues them.
+
+---
+
+## Supabase one-time setup
+
+1. Create a Supabase project, copy the URL, anon key, and service-role key into `.env`.
+2. Run [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql) in the SQL editor (or `supabase db push` with the CLI linked). One file, end-to-end: tables, RLS, RPCs, Realtime publication, Storage bucket, pg_cron cleanup job.
+3. **Authentication → URL Configuration**: set Site URL to your frontend origin and add `${SITE_URL}/auth/verify` to the redirect allow-list.
+4. **Authentication → Email Templates**: review the magic-link copy.
+5. **Authentication → SMTP Settings**: plug in Resend (or any SMTP provider).
+
+The migration creates the `meal-images` Storage bucket (public-read, service-role-write) so generated images survive even if a provider rotates its cache.
+
+---
+
+## Image generation rotation
+
+`IMAGE_PROVIDERS` is a comma-separated, ordered list. The orchestrator tries each in sequence and falls through on any failure. All three options are free.
+
+| Provider | Slug | Setup |
+|---|---|---|
+| Pollinations.ai | `pollinations` | No key. Just works. |
+| Hugging Face Inference (FLUX.1-schnell) | `huggingface` | Free token from huggingface.co/settings/tokens → `HUGGINGFACE_API_TOKEN`. |
+| Cloudflare Workers AI (FLUX-1-schnell) | `cloudflare` | Free CF account → `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` (Workers AI permission only). ~3,300 images/day on free tier. |
+
+Bytes from whichever provider succeeds are uploaded to Supabase Storage so the URL we hand back never depends on the provider's cache.
+
+---
+
+## OpenRouter model rotation
+
+The backend tries the models listed in `OPENROUTER_MODELS` in order. On rate-limit / 5xx / timeout / empty response it rotates; on a non-retryable 4xx it stops. If every model fails it returns 503. Free model slugs change often — keep the list fresh from https://openrouter.ai/models?max_price=0.
+
+---
+
+## API surface
+
+```
+GET    /api/health
+GET    /api/ai/health                      reports SERVICE_MODE + image providers
+GET    /api/status                         per-service rolling outcome snapshot
+GET    /api/auth/me                        verify bearer + return profile
+
+GET    /api/sessions/:id                   host view
+GET    /api/sessions/token/:token          guest view (public)
+GET    /api/sessions/mine                  host's own sessions list (auth)
+POST   /api/sessions                       create + run AI synchronously
+POST   /api/sessions/:id/regenerate        wipe meals + re-run AI
+
+POST   /api/votes/guest                    mint a guest_token
+POST   /api/votes                          cast a vote (uses cast_vote RPC)
+
+GET    /api/saved-meals                    list "My Food" (auth)
+POST   /api/saved-meals                    save (auth)
+PATCH  /api/saved-meals/reorder            bulk reorder (auth)
+DELETE /api/saved-meals/:id                remove (auth)
+
+DELETE /api/account                        delete own account (auth)
+
+POST   /api/track/visit                    record a landing-page visit
+POST   /api/track/login                    record a successful sign-in
+
+GET    /api/_cron/weekly-stats             Vercel Cron — weekly digest email
 ```
 
-#### Development
-```bash
-npm run dev:mock             # Both servers in mock mode (default)
-npm run dev:test             # Both servers in test mode
-npm run dev:prod             # Both servers in production mode
-npm run dev:backend          # Backend only (mock mode)
-npm run dev:frontend         # Frontend only
-```
+Realtime is **not** an HTTP endpoint — the frontend subscribes directly to Supabase channels for `session_meals` and `votes`.
 
-#### Build & Deploy
-```bash
-npm run build                # Build both projects
-npm run start                # Run both production servers
-npm run clean                # Clean build artifacts
-```
+## Operations & observability
 
-#### Code Quality
-```bash
-npm run typecheck            # TypeScript type checking
-npm run lint                 # ESLint on both projects
-npm run check:tailwind       # Verify Tailwind config
-npm run check:all            # Run all checks
-```
+- **Service status** — every external call (Supabase RPC, OpenRouter, each image provider, Resend) upserts its last outcome into `service_status` via the `record_service_outcome` RPC. The landing page polls `/api/status` and renders coloured dots so the operator sees provider drift at a glance.
+- **Lightweight tracking** — `events` (last 30 days), `aggregated_stats` (lifetime totals), `error_log` (rolling) feed a Monday weekly email digest sent from `/api/_cron/weekly-stats`. The cron is wired in [`vercel.json`](vercel.json) and authenticated with `CRON_SECRET`.
+- **Daily auto-purge** — pg_cron job `atavola-cleanup-expired-sessions` runs at 03:15 UTC and drops sessions older than 30 days; saved meals survive (FK is `ON DELETE SET NULL` so anonymised recipes stay searchable).
 
-### Frontend Scripts
+---
 
-Run from `frontend/` directory:
+## Scripts
 
 ```bash
-npm run dev                  # Start dev server
-npm run build                # Build for production
-npm run preview              # Preview production build
-npm run lint                 # Run ESLint
+npm run install:all          install root + frontend
+npm run dev:mock             both servers, mock mode (default)
+npm run dev:test             both servers, real services (staging)
+npm run dev:prod             both servers, production mode
+npm run dev:backend          backend only (dev-server)
+npm run dev:frontend         frontend only
+npm run typecheck            tsc --noEmit on api/+backend/src and on frontend
+npm run lint                 ESLint on the frontend
+npm run build                build the Vite app for production
 ```
 
-### Backend Scripts
-
-Run from `backend/` directory:
-
-```bash
-npm run dev                  # Start dev server (mock mode)
-npm run dev:mock             # Force mock mode
-npm run dev:test             # Force test mode
-npm run dev:prod             # Force production mode
-npm run build                # Compile TypeScript
-npm start                    # Run production server
-```
+Shipping to Vercel runs `npm install` at the repo root + `npm install` in `frontend/` + `npm run build`. Vercel auto-mounts `api/*` as serverless functions. No extra config.
 
 ---
 
-## 📡 API Documentation
+## Deployment
 
-### Base URL
-```
-http://localhost:3000/api
-```
-
-### Authentication Endpoints
-
-#### Request Magic Link
-```http
-POST /auth/request-magic-link
-Content-Type: application/json
-
-{
-  "email": "user@example.com"
-}
-```
-
-#### Verify Magic Link
-```http
-GET /auth/verify?token=<magic_link_token>
-
-Response:
-{
-  "success": true,
-  "token": "jwt_token",
-  "user": {
-    "id": "user_id",
-    "email": "user@example.com"
-  }
-}
-```
-
-#### Get Current User
-```http
-GET /auth/me
-Authorization: Bearer <token>
-```
-
-### Session Endpoints
-
-#### Create Session
-```http
-POST /sessions
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "vibe": "Fancy Taco Tuesday",
-  "headcount": 6,
-  "dietary_restrictions": ["vegan", "gluten-free"]
-}
-```
-
-#### Get Session
-```http
-GET /sessions/:id
-```
-
-#### Generate Share Link
-```http
-POST /sessions/:id/share-link
-Authorization: Bearer <token>
-
-Response:
-{
-  "success": true,
-  "share_link": "http://localhost:5173/vote/abc123",
-  "share_token": "abc123"
-}
-```
-
-#### Join Session as Guest
-```http
-POST /sessions/:id/join
-Content-Type: application/json
-
-{
-  "guest_name": "John Doe"
-}
-```
-
-### Voting Endpoints
-
-#### Submit Vote
-```http
-POST /votes
-Content-Type: application/json
-
-{
-  "session_id": "session_id",
-  "guest_id": "guest_id",
-  "meal_id": "meal_id",
-  "vote_type": "yes"
-}
-```
-
-#### Get Voting Progress
-```http
-GET /sessions/:id/progress
-
-Response:
-{
-  "success": true,
-  "progress": {
-    "total_guests": 5,
-    "guests_completed": 3,
-    "progress_percentage": 60,
-    "winner_id": null
-  }
-}
-```
-
-#### Get Winner
-```http
-GET /sessions/:id/winner
-
-Response:
-{
-  "success": true,
-  "winner": {
-    "meal_id": "meal_id",
-    "meal": { ... },
-    "vote_percentage": 75,
-    "yes_votes": 3,
-    "total_votes": 4
-  }
-}
-```
-
-For complete API documentation, see [Backend README](backend/README.md).
+See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for the step-by-step Vercel + Supabase walkthrough, [DEPLOYMENT_CONFIG.md](DEPLOYMENT_CONFIG.md) for the env-var matrix, and [SECURITY.md](SECURITY.md) for the threat model + the rotations you owe before going live.
 
 ---
 
-## 🚀 Deployment
+## License
 
-### Frontend Deployment
+MIT — see [LICENSE](LICENSE).
 
-#### Vercel (Recommended)
-1. Push to GitHub
-2. Import project in [Vercel](https://vercel.com)
-3. Set root directory to `frontend`
-4. Add environment variables
-5. Deploy
-
-#### Netlify
-1. Build: `npm run build`
-2. Publish directory: `frontend/dist`
-3. Add `_redirects` file for SPA routing
-
-### Backend Deployment
-
-#### Heroku
-```bash
-cd backend
-heroku create your-app-name
-heroku config:set NODE_ENV=production
-heroku config:set SERVICE_MODE=production
-# Add other environment variables
-git push heroku main
-```
-
-#### Railway
-1. Connect GitHub repository
-2. Set root directory to `backend`
-3. Add environment variables
-4. Deploy
-
-#### Docker
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. **Fork the repository**
-2. **Create a feature branch**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Make your changes**
-4. **Run tests and linting**
-   ```bash
-   npm run check:all
-   ```
-5. **Commit your changes**
-   ```bash
-   git commit -m 'Add amazing feature'
-   ```
-6. **Push to the branch**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-7. **Open a Pull Request**
-
-### Development Guidelines
-- Write TypeScript with proper types
-- Follow existing code style
-- Add comments for complex logic
-- Update documentation as needed
-- Test in mock mode before submitting
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👥 Team
-
-Built with ❤️ by the Group Food Tinder team for the IBM Bob Hackathon.
-
----
-
-## 📞 Support
-
-- **Documentation**: Check the [Backend README](backend/README.md) and [Frontend README](frontend/README.md)
-- **Issues**: Open an issue on GitHub
-- **Questions**: Contact the development team
-
----
-
-## 🗺️ Roadmap
-
-- [x] Magic link authentication
-- [x] Session management
-- [x] Tinder-style swipe interface
-- [x] Mock mode for development
-- [x] Real-time voting progress
-- [x] Winner determination algorithm
-- [ ] AI meal generation (OpenAI integration)
-- [ ] WebSocket for real-time updates
-- [ ] PWA support
-- [ ] Mobile app (React Native)
-- [ ] Advanced dietary filters
-- [ ] Restaurant API integration
-- [ ] Social sharing features
-
----
-
-## 🙏 Acknowledgments
-
-- OpenAI for AI capabilities
-- Firebase for backend services
-- The React and Node.js communities
-- All contributors and testers
-
----
-
-<div align="center">
-
-**[⬆ Back to Top](#-group-food-tinder)**
-
-Made with 🍕 and ❤️
-
-</div>
+<!-- Made with Bob -->

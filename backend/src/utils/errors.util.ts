@@ -1,5 +1,5 @@
 /**
- * Custom Error Classes for Group Food Tinder API
+ * Custom Error Classes for the atavola API
  * Provides structured error handling with appropriate HTTP status codes
  */
 

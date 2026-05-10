@@ -1,196 +1,158 @@
-// Session creation page (Screen 1)
+// Screen 1 — Host setup form, including the "My Food" pre-selection table.
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Card } from '../components/Card';
-import type { DietaryRestriction } from '../types';
-import * as sessionService from '../services/session.service';
-import toast from 'react-hot-toast';
+import { MealsPickerTable } from '../components/meals/MealsPickerTable';
+import { useAuth } from '../hooks/useAuth';
+import { useSavedMeals } from '../hooks/useSavedMeals';
+import { createSession } from '../services/session.service';
+import { t } from '../i18n/en';
 
 export const CreateSession = () => {
     const navigate = useNavigate();
-    const [isLoading, setIsLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        vibe: '',
-        headcount: 4,
-        dietaryRestrictions: {
-            vegan: false,
-            glutenFree: false,
-        } as DietaryRestriction,
-    });
-    const [errors, setErrors] = useState({
-        vibe: '',
-        headcount: '',
-    });
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
+    const { meals: savedMeals, isLoading: savedLoading } = useSavedMeals(isAuthenticated);
 
-    const validateForm = (): boolean => {
-        const newErrors = { vibe: '', headcount: '' };
-        let isValid = true;
+    const [vibe, setVibe] = useState('');
+    const [headcount, setHeadcount] = useState(4);
+    const [vegan, setVegan] = useState(false);
+    const [glutenFree, setGlutenFree] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [errors, setErrors] = useState<{ vibe?: string; headcount?: string }>({});
+    const [busy, setBusy] = useState(false);
 
-        if (!formData.vibe || formData.vibe.length < 3) {
-            newErrors.vibe = 'Vibe must be at least 3 characters';
-            isValid = false;
-        }
-
-        if (formData.headcount < 2 || formData.headcount > 20) {
-            newErrors.headcount = 'Headcount must be between 2 and 20';
-            isValid = false;
-        }
-
-        setErrors(newErrors);
-        return isValid;
-    };
+    if (!authLoading && !isAuthenticated) {
+        navigate('/', { replace: true });
+        return null;
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const next: typeof errors = {};
+        if (vibe.trim().length < 3) next.vibe = t.create.vibeError;
+        if (headcount < 2 || headcount > 20) next.headcount = t.create.headcountError;
+        setErrors(next);
+        if (Object.keys(next).length > 0) return;
 
-        if (!validateForm()) {
-            return;
-        }
+        const dietary: string[] = [];
+        if (vegan) dietary.push('vegan');
+        if (glutenFree) dietary.push('gluten-free');
 
-        setIsLoading(true);
+        setBusy(true);
         try {
-            const session = await sessionService.createSession(formData);
-            toast.success('Session created! Generating meals...');
+            const session = await createSession({
+                vibe: vibe.trim(),
+                headcount,
+                dietary,
+                selected_saved_meal_ids: selectedIds,
+            });
             navigate(`/session/${session.id}`);
         } catch (err) {
-            console.error('Failed to create session:', err);
-            toast.error('Failed to create session. Please try again.');
+            console.error('Create session failed:', err);
+            toast.error(t.create.createError);
         } finally {
-            setIsLoading(false);
+            setBusy(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="min-h-[80vh] flex items-start justify-center p-4 py-8">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="w-full max-w-2xl"
             >
-                {/* Header */}
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">
-                        Create Your Session
+                <div className="text-center mb-6">
+                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                        {t.create.title}
                     </h1>
-                    <p className="text-white text-lg opacity-90">
-                        Tell us about your group and we'll generate perfect meal options
-                    </p>
+                    <p className="text-white text-lg opacity-90">{t.create.subtitle}</p>
                 </div>
 
-                {/* Form */}
                 <Card>
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Vibe Input */}
                         <div>
                             <Input
-                                label="Event Vibe"
-                                placeholder="e.g., Fancy Taco Tuesday, Cozy Movie Night"
-                                value={formData.vibe}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, vibe: e.target.value })
-                                }
+                                label={t.create.vibeLabel}
+                                placeholder={t.create.vibePlaceholder}
+                                value={vibe}
+                                onChange={(e) => setVibe(e.target.value)}
                                 error={errors.vibe}
                                 fullWidth
-                                disabled={isLoading}
+                                disabled={busy}
                             />
-                            <p className="text-sm text-gray-500 mt-1">
-                                Describe the mood or theme of your meal
-                            </p>
                         </div>
 
-                        {/* Headcount Input */}
                         <div>
                             <Input
-                                label="Headcount"
+                                label={t.create.headcountLabel}
                                 type="number"
                                 min={2}
                                 max={20}
-                                value={formData.headcount.toString()}
-                                onChange={(e) =>
-                                    setFormData({
-                                        ...formData,
-                                        headcount: parseInt(e.target.value) || 2,
-                                    })
-                                }
+                                value={String(headcount)}
+                                onChange={(e) => setHeadcount(parseInt(e.target.value, 10) || 2)}
                                 error={errors.headcount}
                                 fullWidth
-                                disabled={isLoading}
+                                disabled={busy}
                             />
-                            <p className="text-sm text-gray-500 mt-1">
-                                How many people will be eating? (2-20)
-                            </p>
+                            <p className="text-sm text-gray-500 mt-1">{t.create.headcountHelper}</p>
                         </div>
 
-                        {/* Dietary Restrictions */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">
-                                Dietary Restrictions
-                            </label>
-                            <div className="space-y-3">
-                                <label className="flex items-center space-x-3 cursor-pointer">
+                            <p className="block text-sm font-semibold text-gray-700 mb-3">
+                                {t.create.dietaryTitle}
+                            </p>
+                            <div className="space-y-2">
+                                <label className="flex items-center gap-3 cursor-pointer">
                                     <input
                                         type="checkbox"
-                                        checked={formData.dietaryRestrictions.vegan || false}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                dietaryRestrictions: {
-                                                    ...formData.dietaryRestrictions,
-                                                    vegan: e.target.checked,
-                                                },
-                                            })
-                                        }
-                                        disabled={isLoading}
-                                        className="w-5 h-5 text-blue-600 rounded focus:ring-blue-600"
+                                        checked={vegan}
+                                        onChange={(e) => setVegan(e.target.checked)}
+                                        className="w-5 h-5 accent-blue-600"
+                                        disabled={busy}
                                     />
-                                    <span className="text-gray-700">Vegan</span>
+                                    <span className="text-gray-700">{t.create.vegan}</span>
                                 </label>
-                                <label className="flex items-center space-x-3 cursor-pointer">
+                                <label className="flex items-center gap-3 cursor-pointer">
                                     <input
                                         type="checkbox"
-                                        checked={formData.dietaryRestrictions.glutenFree || false}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                dietaryRestrictions: {
-                                                    ...formData.dietaryRestrictions,
-                                                    glutenFree: e.target.checked,
-                                                },
-                                            })
-                                        }
-                                        disabled={isLoading}
-                                        className="w-5 h-5 text-blue-600 rounded focus:ring-blue-600"
+                                        checked={glutenFree}
+                                        onChange={(e) => setGlutenFree(e.target.checked)}
+                                        className="w-5 h-5 accent-blue-600"
+                                        disabled={busy}
                                     />
-                                    <span className="text-gray-700">Gluten-Free</span>
+                                    <span className="text-gray-700">{t.create.glutenFree}</span>
                                 </label>
                             </div>
                         </div>
 
-                        {/* Submit Button */}
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            fullWidth
-                            isLoading={isLoading}
-                        >
-                            Generate Menu
+                        <div>
+                            <p className="block text-sm font-semibold text-gray-700 mb-1">
+                                {t.create.myFoodTitle}
+                            </p>
+                            <p className="text-xs text-gray-500 mb-3">{t.create.myFoodHint}</p>
+                            {savedLoading ? (
+                                <p className="text-sm text-gray-500">{t.common.loading}</p>
+                            ) : (
+                                <MealsPickerTable
+                                    variant="picker"
+                                    meals={savedMeals}
+                                    selectedIds={selectedIds}
+                                    onSelectionChange={setSelectedIds}
+                                />
+                            )}
+                        </div>
+
+                        <Button type="submit" variant="primary" fullWidth isLoading={busy}>
+                            {busy ? t.create.creating : t.create.submit}
                         </Button>
                     </form>
                 </Card>
-
-                {/* Info */}
-                <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="text-center text-white text-sm mt-6 opacity-80"
-                >
-                    This may take 30-60 seconds while we generate your personalized menu
-                </motion.p>
             </motion.div>
         </div>
     );

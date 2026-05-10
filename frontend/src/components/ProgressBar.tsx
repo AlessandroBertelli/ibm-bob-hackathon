@@ -33,7 +33,7 @@ export const ProgressBar = ({
             {/* Progress Bar */}
             <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
                 <motion.div
-                    className="h-full bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${percentage}%` }}
                     transition={{

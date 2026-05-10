@@ -1,106 +1,131 @@
-// Authentication hook for managing auth state
+// Auth hook — wraps Supabase Auth (or the mock-mode token).
+//
+// Cross-instance reactivity:
+//   • Real auth: `supabase.auth.onAuthStateChange` fires for every instance.
+//   • Mock auth: we don't go through Supabase, so we broadcast a window event
+//     when signInMock / signOut runs and every useAuth instance re-reads from
+//     localStorage. Without this the Header keeps showing "Anmelden" until
+//     the next page refresh.
 
-import { useState, useEffect, useCallback } from 'react';
-import type { User } from '../types';
-import * as authService from '../services/auth.service';
-import { getAuthToken } from '../utils/storage';
+import { useCallback, useEffect, useState } from 'react';
+import type { Session as SupabaseSession } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+import type { AuthUser } from '../types';
+import { clearMockToken, getMockToken, setMockToken } from '../utils/storage';
+import { trackLogin } from '../services/track.service';
 
-interface UseAuthReturn {
-    user: User | null;
-    isAuthenticated: boolean;
-    isLoading: boolean;
-    login: (email: string) => Promise<void>;
-    verify: (token: string) => Promise<void>;
-    logout: () => void;
-    refreshUser: () => Promise<void>;
+const AUTH_EVENT = 'bm:auth-changed';
+
+function broadcastAuthChange() {
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(AUTH_EVENT));
+    }
 }
 
-/**
- * Custom hook for authentication management
- */
+interface UseAuthReturn {
+    user: AuthUser | null;
+    isLoading: boolean;
+    isAuthenticated: boolean;
+    signInWithEmail: (email: string, redirectTo?: string) => Promise<void>;
+    signOut: () => Promise<void>;
+    /** Mock-mode bypass; no-op when real Supabase is configured. */
+    signInMock: (email: string) => void;
+}
+
+function userFromSession(session: SupabaseSession | null): AuthUser | null {
+    if (!session?.user) return null;
+    return { id: session.user.id, email: session.user.email ?? '' };
+}
+
+function userFromMockToken(token: string | null): AuthUser | null {
+    if (!token || !token.startsWith('mock:')) return null;
+    const email = token.slice(5).trim();
+    if (!email) return null;
+    // Match the deterministic-id derivation in mock-supabase.service.ts so the
+    // frontend display matches what the backend will see.
+    return { id: 'mock-' + email, email };
+}
+
 export const useAuth = (): UseAuthReturn => {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<AuthUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Check if user is authenticated
-    const isAuthenticated = !!user && !!getAuthToken();
-
-    /**
-     * Load current user on mount
-     */
     useEffect(() => {
-        const loadUser = async () => {
-            const token = getAuthToken();
-            if (token) {
-                try {
-                    const currentUser = await authService.getCurrentUser();
-                    setUser(currentUser);
-                } catch (error) {
-                    console.error('Failed to load user:', error);
-                    setUser(null);
+        let cancelled = false;
+
+        const refresh = async () => {
+            const mock = getMockToken();
+            if (mock) {
+                if (!cancelled) {
+                    setUser(userFromMockToken(mock));
+                    setIsLoading(false);
                 }
+                return;
             }
-            setIsLoading(false);
+            const { data } = await supabase.auth.getSession();
+            if (!cancelled) {
+                setUser(userFromSession(data.session));
+                setIsLoading(false);
+            }
         };
 
-        loadUser();
-    }, []);
+        refresh();
 
-    /**
-     * Request magic link
-     */
-    const login = useCallback(async (email: string) => {
-        setIsLoading(true);
-        try {
-            await authService.requestMagicLink(email);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    /**
-     * Verify magic link token
-     */
-    const verify = useCallback(async (token: string) => {
-        setIsLoading(true);
-        try {
-            const authResponse = await authService.verifyMagicLink(token);
-            setUser(authResponse.user);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    /**
-     * Logout user
-     */
-    const logout = useCallback(() => {
-        authService.logout();
-        setUser(null);
-    }, []);
-
-    /**
-     * Refresh current user data
-     */
-    const refreshUser = useCallback(async () => {
-        if (getAuthToken()) {
-            try {
-                const currentUser = await authService.getCurrentUser();
-                setUser(currentUser);
-            } catch (error) {
-                console.error('Failed to refresh user:', error);
+        const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+            // Don't override the mock-mode user.
+            if (getMockToken()) return;
+            setUser(userFromSession(session));
+            // Phase B tracking — fire-and-forget on every successful sign-in.
+            if (event === 'SIGNED_IN' && session?.user) {
+                void trackLogin();
             }
-        }
+        });
+
+        // Cross-instance updates for mock-mode sign-in / sign-out.
+        const onAuthChange = () => { refresh(); };
+        window.addEventListener(AUTH_EVENT, onAuthChange);
+
+        return () => {
+            cancelled = true;
+            sub.subscription.unsubscribe();
+            window.removeEventListener(AUTH_EVENT, onAuthChange);
+        };
+    }, []);
+
+    const signInWithEmail = useCallback(async (email: string, redirectTo?: string) => {
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+                emailRedirectTo:
+                    `${window.location.origin}/auth/verify` +
+                    (redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : ''),
+            },
+        });
+        if (error) throw error;
+    }, []);
+
+    const signOut = useCallback(async () => {
+        clearMockToken();
+        await supabase.auth.signOut();
+        setUser(null);
+        broadcastAuthChange();
+    }, []);
+
+    const signInMock = useCallback((email: string) => {
+        setMockToken(email);
+        setUser(userFromMockToken(`mock:${email}`));
+        broadcastAuthChange();
+        // Mock mode never fires Supabase's SIGNED_IN event, so track manually.
+        void trackLogin();
     }, []);
 
     return {
         user,
-        isAuthenticated,
         isLoading,
-        login,
-        verify,
-        logout,
-        refreshUser,
+        isAuthenticated: !!user,
+        signInWithEmail,
+        signOut,
+        signInMock,
     };
 };
 

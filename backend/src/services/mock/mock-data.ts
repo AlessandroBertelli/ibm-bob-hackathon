@@ -3,7 +3,7 @@
  * Pre-defined meal templates for mock AI service
  */
 
-import { GeneratedMeal, Ingredient } from '../../types/ai.types';
+import { GeneratedMeal } from '../../types/ai.types';
 
 /**
  * Meal templates organized by cuisine type

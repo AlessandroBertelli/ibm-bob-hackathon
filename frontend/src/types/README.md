@@ -1,32 +1,13 @@
 # Types
 
-This directory contains TypeScript type definitions and interfaces.
+Single barrel file: [`index.ts`](index.ts).
 
-## Type Files to Implement
+Mirrors the Supabase schema in [`../../../supabase/migrations/0001_init.sql`](../../../supabase/migrations/0001_init.sql) using snake_case fields:
 
-- **user.types.ts**: User-related types (User, UserProfile, AuthState)
-- **group.types.ts**: Group-related types (Group, GroupMember, GroupSession)
-- **restaurant.types.ts**: Restaurant types (Restaurant, RestaurantDetails, Cuisine)
-- **swipe.types.ts**: Swipe-related types (SwipeAction, SwipeResult, Match)
-- **api.types.ts**: API request/response types
-- **common.types.ts**: Shared utility types
+- `Session`, `SessionWithMeals`, `SessionMeal`, `SessionStatus`
+- `Ingredient`
+- `SavedMeal`
+- `VoteValue`
+- `AuthUser`, `DietaryRestrictions` (frontend-only convenience)
 
-## Best Practices
-
-- Use interfaces for object shapes
-- Use type aliases for unions and complex types
-- Export all types for use across the application
-- Document complex types with JSDoc comments
-- Keep types DRY (Don't Repeat Yourself)
-
-## Example
-
-```typescript
-export interface User {
-  id: string;
-  email: string;
-  displayName?: string;
-  createdAt: Date;
-}
-
-export type SwipeDirection = 'left' | 'right';
+Rule of thumb: when the schema changes, update these types and the matching backend types in [`../../../backend/src/types/`](../../../backend/src/types/) in the same commit.

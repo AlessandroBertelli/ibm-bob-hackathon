@@ -1,616 +1,272 @@
-# 🚀 Group Food Tinder - Complete Deployment Guide
+# atavola — Deployment guide
 
-## 📋 Overview
+End-to-end walkthrough for getting atavola live on **a single Vercel project** with Supabase. ~30 minutes once you have the API keys.
 
-This guide will help you deploy your Group Food Tinder app online using **free services**. Yes, you can use Render's free tier!
+## Cost
 
-### What You'll Deploy
-- **Frontend**: React app (Vercel Free)
-- **Backend**: Node.js API (Render Free)
-- **Database**: Firebase Realtime Database (Free tier)
-- **AI**: OpenAI API (Pay-as-you-go, ~$0.002 per request)
-- **Email**: Gmail SMTP (Free)
+- Supabase free tier: 500 MB DB, 1 GB Storage, 50k MAU.
+- Vercel Hobby: 100 GB bandwidth/month, 100k function invocations/month, 60 s function `maxDuration`. Plenty.
+- OpenRouter: free models cost nothing per call (each is rate-limited; the rotation list handles that).
+- Pollinations.ai: free, no account.
+- Hugging Face Inference: free with a token; rate-limited.
+- Cloudflare Workers AI: free tier, ~3,300 FLUX-1-schnell images/day.
+- Resend: 3k emails/month free.
 
-### Total Cost
-- **Development/Testing**: $0 (using mock mode)
-- **Production**: ~$5-10/month (mostly OpenAI usage)
-
----
-
-## 🎯 Deployment Strategy
-
-### Option 1: Quick Demo (Recommended for Hackathon)
-**Time: 30 minutes**
-- Deploy with mock mode (no API keys needed)
-- Perfect for demos and testing
-- Zero cost
-
-### Option 2: Full Production
-**Time: 2 hours**
-- All services configured
-- Real AI generation
-- Email notifications
-- Best for actual use
+Total: **$0/month** at hackathon scale.
 
 ---
 
-## 📝 Step-by-Step Deployment Plan
+## Prerequisites
 
-### Phase 1: Get Your API Keys (1 hour)
+- A GitHub repo with this code.
+- Free accounts: Supabase, OpenRouter, Resend, Vercel. Optional but recommended: Hugging Face, Cloudflare (image-gen fallbacks).
 
-#### 1.1 Firebase Setup (15 min)
-**What it does**: Database for sessions, votes, and user data
+---
 
-**Steps:**
-1. Go to [Firebase Console](https://console.firebase.google.com)
-2. Click "Add project"
-3. Name it: `group-food-tinder`
-4. Disable Google Analytics (optional)
-5. Click "Create project"
+## 1. Supabase
 
-**Enable Realtime Database:**
-1. In left sidebar → Build → Realtime Database
-2. Click "Create Database"
-3. Choose location: `us-central1` (or closest to you)
-4. Start in **test mode** (we'll secure it later)
-5. Click "Enable"
+### 1.1 Create the project
 
-**Get Service Account Credentials:**
-1. Click gear icon → Project settings
-2. Go to "Service accounts" tab
-3. Click "Generate new private key"
-4. Download the JSON file
-5. Open it and copy these values:
-   - `project_id` → FIREBASE_PROJECT_ID
-   - `private_key` → FIREBASE_PRIVATE_KEY
-   - `client_email` → FIREBASE_CLIENT_EMAIL
+1. https://supabase.com/dashboard → "New project".
+2. Pick a region close to your users.
+3. Wait ~2 min for provisioning.
 
-**Security Rules (Important!):**
-```json
-{
-  "rules": {
-    "sessions": {
-      "$sessionId": {
-        ".read": true,
-        ".write": "auth != null || data.exists()"
-      }
-    },
-    "votes": {
-      "$sessionId": {
-        ".read": true,
-        ".write": true
-      }
-    }
-  }
-}
+### 1.2 Apply the schema
+
+1. Open **SQL Editor** in the dashboard.
+2. Paste and run [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql). Single file, end-to-end:
+   - tables (`profiles`, `saved_meals`, `sessions`, `session_meals`, `guests`, `votes`, `rate_log`, `service_status`, `events`, `aggregated_stats`, `error_log`),
+   - RLS policies on every one of them,
+   - RPCs (`cast_vote`, `ensure_guest`, `check_rate`, `record_service_outcome`, `record_event`, `record_error`, `get_weekly_digest_data`, `cleanup_after_digest`, `list_my_sessions`),
+   - the `supabase_realtime` publication for live results,
+   - the public-read `meal-images` Storage bucket,
+   - and the daily pg_cron `atavola-cleanup-expired-sessions` job at 03:15 UTC.
+
+The file is idempotent — running it twice is safe.
+
+### 1.3 Configure Auth
+
+**Authentication → URL Configuration**
+- Site URL: your future Vercel URL (you'll update once Vercel gives you the domain).
+- Redirect URLs: add `${SITE_URL}/auth/verify`.
+
+**Authentication → Email Templates → Magic Link**
+- Default English copy is fine. Keep `{{ .ConfirmationURL }}` as the link placeholder.
+
+**Authentication → SMTP Settings**
+- Enable "Custom SMTP" and point it at Resend.
+  ```
+  Host:     smtp.resend.com
+  Port:     465
+  User:     resend
+  Password: <Resend API key>
+  Sender:   <verified domain>      (or onboarding@resend.dev for testing)
+  Sender name: atavola
+  ```
+
+### 1.4 Grab the keys
+
+**Settings → API**, copy:
+
+- Project URL → `SUPABASE_URL` and `VITE_SUPABASE_URL`.
+- `anon` public key → `VITE_SUPABASE_ANON_KEY`.
+- `service_role` secret → `SUPABASE_SERVICE_ROLE_KEY` (server-only, never expose).
+
+---
+
+## 2. OpenRouter
+
+1. https://openrouter.ai → sign up.
+2. **Keys** → "Create Key". Copy the `sk-or-v1-...` value into `OPENROUTER_API_KEY`.
+3. Browse https://openrouter.ai/models?max_price=0 and pick 3–5 free models. A solid starting set:
+   ```
+   OPENROUTER_MODELS=google/gemini-2.0-flash-exp:free,deepseek/deepseek-chat:free,meta-llama/llama-3.3-70b-instruct:free,mistralai/mistral-7b-instruct:free
+   ```
+
+---
+
+## 3. Image-gen providers (optional but recommended)
+
+`IMAGE_PROVIDERS` is comma-separated, tried in order. Pollinations alone works; adding the others gives resilience.
+
+### 3.1 Pollinations.ai (no setup)
+
+Already free, no account. Add `pollinations` to `IMAGE_PROVIDERS`.
+
+### 3.2 Hugging Face Inference
+
+1. https://huggingface.co/join → sign up (or use existing account).
+2. https://huggingface.co/settings/tokens → "New token", role "Read".
+3. Save as `HUGGINGFACE_API_TOKEN`.
+4. Add `huggingface` to `IMAGE_PROVIDERS`.
+
+### 3.3 Cloudflare Workers AI
+
+1. https://dash.cloudflare.com → sign up.
+2. **Account home** → copy the Account ID from the right rail → `CLOUDFLARE_ACCOUNT_ID`.
+3. **My Profile → API Tokens → Create Token → Custom token**:
+   - Permissions: `Account → Workers AI → Read`.
+   - Account Resources: include your account.
+4. Save the token as `CLOUDFLARE_API_TOKEN`.
+5. Add `cloudflare` to `IMAGE_PROVIDERS`.
+
+Recommended order: `pollinations,huggingface,cloudflare`. Pollinations is fastest; HF and CF are sturdier when Pollinations slows down.
+
+---
+
+## 4. Vercel
+
+### 4.1 Import the project
+
+1. https://vercel.com → "Add New" → "Project".
+2. Import the GitHub repo.
+3. Configure:
+   - **Framework Preset**: Other (auto-detected from `vercel.json`).
+   - **Root Directory**: `.` (repo root — leave default).
+   - **Build / Output / Install** commands: leave at defaults; `vercel.json` overrides them.
+4. Don't deploy yet — set env vars first.
+
+### 4.2 Environment variables
+
+Vercel → Project → Settings → Environment Variables. Add each, mark for Production + Preview + Development:
+
 ```
-
-**Cost**: Free up to 1GB storage, 10GB/month downloads
-
----
-
-#### 1.2 OpenAI API Setup (10 min)
-**What it does**: Generates creative meal suggestions
-
-**Steps:**
-1. Go to [OpenAI Platform](https://platform.openai.com)
-2. Sign up or log in
-3. Click your profile → "View API keys"
-4. Click "Create new secret key"
-5. Name it: `group-food-tinder`
-6. Copy the key (starts with `sk-`)
-7. **IMPORTANT**: Save it immediately (you can't see it again!)
-
-**Add Credits:**
-1. Go to Settings → Billing
-2. Add payment method
-3. Set usage limit: $5/month (recommended for testing)
-
-**Cost**: 
-- GPT-3.5-turbo: ~$0.002 per meal generation
-- 100 sessions = ~$0.20
-- Recommended budget: $5-10/month
-
----
-
-#### 1.3 Gmail SMTP Setup (10 min)
-**What it does**: Sends magic link emails for authentication
-
-**Steps:**
-1. Go to [Google Account](https://myaccount.google.com)
-2. Enable 2-Factor Authentication:
-   - Security → 2-Step Verification → Get Started
-3. Generate App Password:
-   - Security → 2-Step Verification → App passwords
-   - Select app: "Mail"
-   - Select device: "Other" → Name it "Group Food Tinder"
-   - Click "Generate"
-   - Copy the 16-character password
-
-**Alternative Email Services:**
-- **SendGrid**: 100 emails/day free
-- **Mailgun**: 5,000 emails/month free
-- **AWS SES**: 62,000 emails/month free (if on AWS)
-
-**Cost**: Free (Gmail has daily limits ~500 emails/day)
-
----
-
-#### 1.4 JWT Secrets (5 min)
-**What it does**: Secure token generation
-
-**Generate Random Secrets:**
-```bash
-# Run these commands in your terminal
-node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-# Copy output for JWT_SECRET
-
-node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-# Copy output for MAGIC_LINK_SECRET
-```
-
----
-
-### Phase 2: Deploy Backend to Render (30 min)
-
-#### 2.1 Prepare Backend for Deployment (10 min)
-
-**1. Create `backend/.env.production` file:**
-```env
-# Server Configuration
-PORT=3000
-NODE_ENV=production
-FRONTEND_URL=https://your-app.vercel.app
-
-# Service Mode
 SERVICE_MODE=production
 
-# Firebase Admin SDK
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour private key here\n-----END PRIVATE KEY-----\n"
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your_project_id.iam.gserviceaccount.com
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
 
-# OpenAI API
-OPENAI_API_KEY=sk-your_openai_api_key_here
+OPENROUTER_API_KEY=
+OPENROUTER_MODELS=
 
-# Email Configuration
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your_email@gmail.com
-SMTP_PASS=your_16_char_app_password
-EMAIL_FROM=noreply@groupfoodtinder.com
+IMAGE_PROVIDERS=pollinations,huggingface,cloudflare
+HUGGINGFACE_API_TOKEN=
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_API_TOKEN=
 
-# JWT Configuration
-JWT_SECRET=your_generated_jwt_secret_here
-JWT_EXPIRES_IN=7d
-
-# Magic Link Configuration
-MAGIC_LINK_SECRET=your_generated_magic_link_secret_here
-MAGIC_LINK_EXPIRES_IN=15m
-
-# Logging
-LOG_LEVEL=info
+# Weekly digest email (Vercel Cron → /api/_cron/weekly-stats)
+RESEND_API_KEY=
+EMAIL_FROM=atavola <no-reply@atavola.ch>
+CRON_SECRET=
+STATS_EMAIL_RECIPIENTS=
 ```
 
-**2. Verify `backend/package.json` has these scripts:**
-```json
-{
-  "scripts": {
-    "start": "node dist/index.js",
-    "build": "tsc",
-    "dev": "nodemon src/index.ts"
-  }
-}
-```
+Notes:
+
+- `EMAIL_FROM` is the sender for direct Resend HTTP calls (currently just the weekly digest). It's separate from the Supabase Auth → SMTP settings; magic-link mail still uses whatever you wired up there. The domain in `EMAIL_FROM` must be verified in Resend.
+- `CRON_SECRET` is what Vercel signs cron requests with as `Authorization: Bearer …`. Set it both in the env-vars block above **and** in **Settings → Cron Jobs** for the project. Mismatch → the cron 401s.
+- `STATS_EMAIL_RECIPIENTS` is a comma-separated list. Empty = the cron runs but skips sending (handy in staging).
+- The schedule itself lives in [`vercel.json`](vercel.json) (`crons` block). Default is every Monday 09:00 UTC; change it there and redeploy.
+- `VITE_API_URL` is intentionally absent — same-origin defaults to `/api` and that's correct here.
+
+### 4.3 Deploy
+
+Click "Deploy". ~1–2 minutes. Note the URL (e.g. `https://atavola.vercel.app`).
+
+### 4.4 Loop the URL back to Supabase
+
+Go back to **Supabase → Authentication → URL Configuration**: set Site URL and Redirect URL to the Vercel URL.
+
+If you later add a custom domain, repeat this step with the new domain.
 
 ---
 
-#### 2.2 Deploy to Render (20 min)
+## 5. Smoke test
 
-**Why Render?**
-- ✅ Free tier available
-- ✅ Automatic deployments from GitHub
-- ✅ Easy environment variable management
-- ✅ Built-in SSL certificates
+```bash
+curl https://your-app.vercel.app/api/health
+# → {"status":"ok","mode":"production",...}
+```
 
-**Steps:**
+In a private window:
 
-1. **Push to GitHub** (if not already done):
-   ```bash
-   git add .
-   git commit -m "Prepare for deployment"
-   git push origin neon
+1. Open the Vercel URL.
+2. Sign in with magic link (check your inbox — see "Resend domain" gotcha below).
+3. Create a session: vibe + headcount + no pre-selected meals.
+4. Wait for the 4 cards to appear with images.
+5. Click "Share voting link". Try the **native share** button (mobile only) and the **copy link** button. Tapping the URL pill itself also copies. Try the **QR code**.
+6. In another private window, open the link, swipe through the 4 cards.
+7. In the host window, watch the live results re-rank.
+8. Heart a card → it appears under "My Food" in your profile dropdown.
+9. Reload the profile, drag to reorder, swipe a row left to delete.
+
+If any step fails, check Vercel function logs (Project → Logs → click a function) and the browser console.
+
+---
+
+## 6. Custom domain (optional)
+
+1. Buy at any registrar (Cloudflare Registrar is at-cost).
+2. Vercel → Project → Settings → Domains → Add. Follow Vercel's DNS instructions.
+3. Once active, update **Supabase → Authentication → URL Configuration** to use the new domain.
+4. Update **Resend → Domains** to verify the new sending domain so magic-link emails work for everyone, not just yourself.
+
+No code changes needed — the app reads URLs from env / runtime, never hardcoded.
+
+---
+
+## 7. Email deliverability (SPF / DKIM / DMARC)
+
+Magic-link delivery is the silent growth lever — if mail lands in spam, sign-ups die without you noticing. Resend's dashboard walks you through the DNS records; here's what to set on the apex domain (`atavola.ch`):
+
+1. **SPF** (`TXT @`) — tells receivers which servers may send mail "as" your domain.
    ```
-
-2. **Sign up for Render**:
-   - Go to [Render.com](https://render.com)
-   - Sign up with GitHub
-   - Authorize Render to access your repositories
-
-3. **Create New Web Service**:
-   - Click "New +" → "Web Service"
-   - Connect your GitHub repository
-   - Select `ibm-bob-hackathon` repo
-   - Click "Connect"
-
-4. **Configure Service**:
+   v=spf1 include:_spf.resend.com ~all
    ```
-   Name: group-food-tinder-api
-   Region: Oregon (US West) or closest to you
-   Branch: neon
-   Root Directory: backend
-   Runtime: Node
-   Build Command: npm install && npm run build
-   Start Command: npm start
-   Instance Type: Free
+   `~all` (soft fail) is the right choice while you stabilise; switch to `-all` (hard fail) once you're confident no other systems send mail from atavola.ch.
+
+2. **DKIM** — Resend auto-generates a CNAME pair when you verify the domain. Copy them into DNS verbatim. They look like:
    ```
-
-5. **Add Environment Variables**:
-   - Click "Environment" tab
-   - Click "Add Environment Variable"
-   - Add ALL variables from your `.env.production` file
-   - **IMPORTANT**: For `FIREBASE_PRIVATE_KEY`, paste the entire key including `\n` characters
-
-6. **Deploy**:
-   - Click "Create Web Service"
-   - Wait 5-10 minutes for deployment
-   - Your API will be at: `https://group-food-tinder-api.onrender.com`
-
-**Render Free Tier Limitations:**
-- ⚠️ Spins down after 15 minutes of inactivity
-- ⚠️ First request after spin-down takes 30-60 seconds
-- ⚠️ 750 hours/month free (enough for one service)
-- ✅ Perfect for demos and low-traffic apps
-
-**Pro Tip**: Keep your service alive with a cron job:
-```bash
-# Use cron-job.org to ping your API every 14 minutes
-curl https://group-food-tinder-api.onrender.com/api/health
-```
-
----
-
-### Phase 3: Deploy Frontend to Vercel (20 min)
-
-#### 3.1 Prepare Frontend (5 min)
-
-**1. Create `frontend/.env.production`:**
-```env
-VITE_API_URL=https://group-food-tinder-api.onrender.com/api
-```
-
-**2. Update `frontend/vite.config.ts` (if needed):**
-```typescript
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173
-  },
-  build: {
-    outDir: 'dist',
-    sourcemap: false
-  }
-})
-```
-
----
-
-#### 3.2 Deploy to Vercel (15 min)
-
-**Why Vercel?**
-- ✅ Free tier for personal projects
-- ✅ Automatic HTTPS
-- ✅ Global CDN
-- ✅ Instant deployments
-- ✅ Perfect for React apps
-
-**Steps:**
-
-1. **Sign up for Vercel**:
-   - Go to [Vercel.com](https://vercel.com)
-   - Sign up with GitHub
-   - Authorize Vercel
-
-2. **Import Project**:
-   - Click "Add New..." → "Project"
-   - Import `ibm-bob-hackathon` repository
-   - Click "Import"
-
-3. **Configure Project**:
+   resend._domainkey  CNAME  resend._domainkey.<region>.amazonses.com
    ```
-   Framework Preset: Vite
-   Root Directory: frontend
-   Build Command: npm run build
-   Output Directory: dist
-   Install Command: npm install
+   Wait for Resend to flip the domain status to "verified" (usually <10 min).
+
+3. **DMARC** (`TXT _dmarc`) — tells receivers what to do with mail that fails SPF / DKIM and where to report aggregate failures.
    ```
+   v=DMARC1; p=none; rua=mailto:no-reply@atavola.ch; pct=100; aspf=r; adkim=r
+   ```
+   Start with `p=none` so you collect reports without rejecting legitimate mail. After a week of clean reports, tighten to `p=quarantine`, then `p=reject`.
 
-4. **Add Environment Variables**:
-   - Click "Environment Variables"
-   - Add: `VITE_API_URL` = `https://group-food-tinder-api.onrender.com/api`
-   - Click "Add"
+4. **Reverse DNS** is handled by Resend on their sending IPs — nothing for you to configure.
 
-5. **Deploy**:
-   - Click "Deploy"
-   - Wait 2-3 minutes
-   - Your app will be at: `https://your-app.vercel.app`
+5. **Verify**: send a magic-link to a Gmail address and inspect the headers. You want `dkim=pass`, `spf=pass`, `dmarc=pass`. [https://www.mail-tester.com/](https://www.mail-tester.com/) gives a 0–10 score; aim for 9+.
 
-6. **Update Backend CORS**:
-   - Go back to Render dashboard
-   - Update `FRONTEND_URL` environment variable
-   - Set to: `https://your-app.vercel.app`
-   - Redeploy backend
+The same Resend domain powers the weekly digest (`/api/_cron/weekly-stats`). `EMAIL_FROM` must use this verified domain or sends bounce silently.
 
 ---
 
-### Phase 4: Testing & Verification (20 min)
+## 8. SEO submission
 
-#### 4.1 Test Checklist
+The static landing page, `/about`, `/privacy`, and `/terms` ship with full meta and JSON-LD; `robots.txt`, `sitemap.xml`, `llms.txt`, and `humans.txt` live in `frontend/public/`. After first deploy:
 
-**Backend Health Check:**
-```bash
-curl https://group-food-tinder-api.onrender.com/api/health
-# Should return: {"status":"ok","mode":"production"}
-```
-
-**Frontend Access:**
-1. Open `https://your-app.vercel.app`
-2. Should see landing page
-3. Check browser console for errors
-
-**Full Flow Test:**
-1. ✅ Request magic link (check email)
-2. ✅ Click magic link (should authenticate)
-3. ✅ Create session with vibe and headcount
-4. ✅ AI generates meals (wait 30-60 seconds)
-5. ✅ Share link works
-6. ✅ Voting interface loads
-7. ✅ Swipe cards work
-8. ✅ Winner displays correctly
+1. **Google Search Console** — [https://search.google.com/search-console](https://search.google.com/search-console). Add the property (use DNS verification on atavola.ch so all subdomains are covered). Submit `https://atavola.ch/sitemap.xml`. Indexing usually starts within hours.
+2. **Bing Webmaster Tools** — [https://www.bing.com/webmasters](https://www.bing.com/webmasters). Same flow; Bing also feeds DuckDuckGo results.
+3. **Yandex Webmaster** (optional, only if you care about RU/CIS traffic).
+4. **Sitemap auto-discovery** — `robots.txt` already references the sitemap. Most crawlers find it automatically; the manual submission above just shortens the discovery window.
+5. **Validate**:
+   - [Google Rich Results Test](https://search.google.com/test/rich-results) — paste each of `/`, `/about`, `/privacy`, `/terms` and confirm the JSON-LD blocks parse.
+   - [Twitter / X Card Validator](https://cards-dev.twitter.com/validator) — paste the home URL, confirm the OG image renders.
+   - [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/) — same.
+   - [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) — same. Click "Scrape Again" if cached.
+   - [securityheaders.com](https://securityheaders.com/) and [Mozilla Observatory](https://observatory.mozilla.org/) — both should score A or A+.
+   - [PageSpeed Insights](https://pagespeed.web.dev/) — Core Web Vitals must be green for ranking.
 
 ---
 
-#### 4.2 Common Issues & Fixes
+## Common pitfalls
 
-**Issue: Backend takes 30+ seconds to respond**
-- **Cause**: Render free tier cold start
-- **Fix**: Normal behavior, or upgrade to paid tier ($7/month)
+| Symptom | Cause | Fix |
+|---|---|---|
+| Function logs say "Refusing to boot: SERVICE_MODE=…" | Vercel env var unset or misspelled | Set `SERVICE_MODE=production` exactly. The hard fail is intentional — see [SECURITY.md](SECURITY.md) #C1. |
+| Magic-link email never arrives for anyone but you | Resend domain not verified | Verify the domain in Resend, then point Supabase SMTP at it. Until verified, only your own address receives mail. |
+| 401 on every call | RLS denies because policies didn't run | Re-apply both migrations — verify policies under `Authentication → Policies`. |
+| `cast_vote` errors with `session_expired` or `session_not_open` | Session is older than 30 days or status moved off `voting` | Hosts create a new session; expiry is enforced server-side and the daily pg_cron purges past it anyway. |
+| `cast_vote` errors with `invalid_guest_token` | Guest hasn't been minted | Frontend should call `POST /api/votes/guest` once before voting (it does — clear localStorage and reload if stale). |
+| 429 on rate-limited endpoints | The Postgres rate-limit RPC threw | Check function logs for `[checkRate] RPC failed` warnings. The limiter fails open to avoid locking real users out, but a sustained warning means you're effectively unprotected — fix the underlying DB error. |
+| Generated images broken | Every image provider failed magic-byte sniff or quota | Inspect the function log — provider names + reasons are logged. Most common: wrong CF/HF key, or HF model warming up (just retry). |
+| Meal generation 503s | All OpenRouter free models hit their daily quota | Add more models to `OPENROUTER_MODELS`; rotation will skip past empty ones. |
+| Vercel function times out | LLM + 4 image fetches > 60 s | Drop a slow provider from `IMAGE_PROVIDERS` (HF when its servers are loading). Long-term: Vercel Pro = 300 s, or split generation into per-meal endpoints (out of scope today). |
 
-**Issue: CORS errors in browser**
-- **Cause**: FRONTEND_URL mismatch
-- **Fix**: Update FRONTEND_URL in Render to match Vercel URL exactly
-
-**Issue: Firebase permission denied**
-- **Cause**: Security rules too strict
-- **Fix**: Update Firebase rules (see Phase 1.1)
-
-**Issue: OpenAI rate limit errors**
-- **Cause**: Too many requests
-- **Fix**: Add rate limiting or upgrade OpenAI plan
-
-**Issue: Email not sending**
-- **Cause**: Gmail app password incorrect
-- **Fix**: Regenerate app password, update SMTP_PASS
-
----
-
-### Phase 5: Custom Domain (Optional, 10 min)
-
-#### 5.1 Add Custom Domain to Vercel
-
-**Steps:**
-1. Buy domain from Namecheap, GoDaddy, etc. (~$10/year)
-2. In Vercel dashboard → Settings → Domains
-3. Add your domain: `groupfoodtinder.com`
-4. Follow DNS configuration instructions
-5. Wait 24-48 hours for DNS propagation
-
-**Free Domain Options:**
-- Use Vercel's free subdomain: `your-app.vercel.app`
-- Use Render's free subdomain: `your-api.onrender.com`
-
----
-
-## 🎭 Deployment Modes Comparison
-
-### Mock Mode (Free, Instant)
-```bash
-# Deploy with mock mode for demos
-SERVICE_MODE=mock
-```
-**Pros:**
-- ✅ Zero cost
-- ✅ No API keys needed
-- ✅ Instant deployment
-- ✅ Perfect for demos
-
-**Cons:**
-- ❌ No real AI generation
-- ❌ No email sending
-- ❌ Data resets on restart
-
----
-
-### Production Mode (Paid, Full Features)
-```bash
-SERVICE_MODE=production
-```
-**Pros:**
-- ✅ Real AI meal generation
-- ✅ Email notifications
-- ✅ Persistent data
-- ✅ Production-ready
-
-**Cons:**
-- ❌ Requires API keys
-- ❌ ~$5-10/month cost
-- ❌ More setup time
-
----
-
-## 💰 Cost Breakdown
-
-### Free Tier (Mock Mode)
-| Service | Cost | Limits |
-|---------|------|--------|
-| Render | $0 | 750 hours/month, cold starts |
-| Vercel | $0 | 100GB bandwidth/month |
-| **Total** | **$0/month** | Perfect for demos |
-
-### Production Tier
-| Service | Cost | Usage |
-|---------|------|-------|
-| Render | $0 | Free tier |
-| Vercel | $0 | Free tier |
-| Firebase | $0 | Free tier (1GB storage) |
-| OpenAI | ~$5-10 | ~2,500 meal generations |
-| Gmail | $0 | Free (500 emails/day limit) |
-| **Total** | **~$5-10/month** | Light usage |
-
-### Scaling Costs
-| Users/Month | OpenAI Cost | Render Cost | Total |
-|-------------|-------------|-------------|-------|
-| 100 | ~$2 | $0 | ~$2 |
-| 1,000 | ~$20 | $7 | ~$27 |
-| 10,000 | ~$200 | $25 | ~$225 |
-
----
-
-## 🚀 Quick Deploy Commands
-
-### Deploy Everything (Mock Mode)
-```bash
-# 1. Push to GitHub
-git add .
-git commit -m "Deploy to production"
-git push origin neon
-
-# 2. Deploy backend to Render
-# (Use Render dashboard - see Phase 2)
-
-# 3. Deploy frontend to Vercel
-# (Use Vercel dashboard - see Phase 3)
-```
-
-### Update Deployment
-```bash
-# Just push to GitHub - auto-deploys!
-git add .
-git commit -m "Update feature"
-git push origin neon
-```
-
----
-
-## 📊 Monitoring & Maintenance
-
-### Check Backend Logs
-1. Go to Render dashboard
-2. Click your service
-3. Click "Logs" tab
-4. Monitor for errors
-
-### Check Frontend Logs
-1. Go to Vercel dashboard
-2. Click your project
-3. Click "Deployments"
-4. Click latest deployment → "View Function Logs"
-
-### Set Up Alerts
-**Render:**
-- Settings → Notifications
-- Add email for deployment failures
-
-**Vercel:**
-- Settings → Notifications
-- Enable deployment notifications
-
----
-
-## 🔒 Security Checklist
-
-- [ ] All API keys in environment variables (not in code)
-- [ ] Firebase security rules configured
-- [ ] CORS properly configured
-- [ ] JWT secrets are random and secure
-- [ ] HTTPS enabled (automatic on Vercel/Render)
-- [ ] Rate limiting enabled
-- [ ] Input validation on all endpoints
-- [ ] No sensitive data in logs
-
----
-
-## 🎯 Recommended Deployment Path
-
-### For Hackathon Demo (30 min)
-1. ✅ Deploy backend in **mock mode** to Render
-2. ✅ Deploy frontend to Vercel
-3. ✅ Test basic flow
-4. ✅ Present demo
-
-### For Production (2 hours)
-1. ✅ Get all API keys (Phase 1)
-2. ✅ Deploy backend in **production mode** to Render
-3. ✅ Deploy frontend to Vercel
-4. ✅ Test full flow with real services
-5. ✅ Monitor and optimize
-
----
-
-## 📞 Support & Resources
-
-### Documentation
-- [Render Docs](https://render.com/docs)
-- [Vercel Docs](https://vercel.com/docs)
-- [Firebase Docs](https://firebase.google.com/docs)
-- [OpenAI Docs](https://platform.openai.com/docs)
-
-### Troubleshooting
-- Check backend logs in Render
-- Check frontend logs in Vercel
-- Check browser console for errors
-- Test API endpoints with Postman/curl
-
-### Community
-- GitHub Issues
-- Stack Overflow
-- Discord/Slack channels
-
----
-
-## ✅ Final Checklist
-
-### Before Demo
-- [ ] Backend deployed and responding
-- [ ] Frontend deployed and accessible
-- [ ] Test magic link authentication
-- [ ] Test session creation
-- [ ] Test voting flow
-- [ ] Test winner determination
-- [ ] Prepare backup screenshots
-- [ ] Practice demo script
-
-### After Demo
-- [ ] Monitor usage and costs
-- [ ] Set up error tracking (Sentry)
-- [ ] Add analytics (Google Analytics)
-- [ ] Collect user feedback
-- [ ] Plan improvements
-
----
-
-## 🎉 You're Ready to Deploy!
-
-**Next Steps:**
-1. Choose your deployment mode (mock or production)
-2. Follow the step-by-step guide above
-3. Test thoroughly
-4. Share your app with the world!
-
-**Questions?** Check the troubleshooting section or open an issue on GitHub.
-
-**Good luck with your deployment! 🚀**
+<!-- Made with Bob -->

@@ -1,10 +1,7 @@
-// Type definitions for Group Food Tinder
+// Type definitions — mirror the Postgres schema (snake_case fields).
 
-export interface User {
-    id: string;
-    email: string;
-    createdAt: string;
-}
+export type SessionStatus = 'generating' | 'voting';
+export type VoteValue = 'yes' | 'no';
 
 export interface Ingredient {
     name: string;
@@ -12,123 +9,81 @@ export interface Ingredient {
     unit: string;
 }
 
-export interface Meal {
+export interface SessionMeal {
     id: string;
-    sessionId: string;
+    session_id: string;
+    source_saved_meal_id: string | null;
     title: string;
     description: string;
-    imageUrl: string;
+    image_url: string | null;
     ingredients: Ingredient[];
-    createdAt: string;
-}
-
-export const SessionStatus = {
-    SETUP: 'setup',
-    GENERATING: 'generating',
-    VOTING: 'voting',
-    COMPLETED: 'completed'
-} as const;
-
-export type SessionStatus = typeof SessionStatus[keyof typeof SessionStatus];
-
-export interface DietaryRestriction {
-    vegan?: boolean;
-    glutenFree?: boolean;
+    instructions: string[];
+    position: number;
+    yes_count: number;
+    no_count: number;
+    created_at: string;
 }
 
 export interface Session {
     id: string;
+    host_id: string;
     vibe: string;
     headcount: number;
-    dietaryRestrictions: DietaryRestriction;
+    dietary: string[];
+    share_token: string;
     status: SessionStatus;
-    shareLink?: string;
-    meals: Meal[];
-    createdAt: string;
-    expiresAt: string;
+    created_at: string;
+    expires_at: string;
 }
 
-export const VoteType = {
-    YES: 'yes',
-    NO: 'no'
-} as const;
+export interface SessionWithMeals extends Session {
+    meals: SessionMeal[];
+}
 
-export type VoteType = typeof VoteType[keyof typeof VoteType];
+/**
+ * A meal with cooking steps, image, ingredients — the shape rendered in any
+ * detail modal. Both SessionMeal and SavedMeal satisfy this.
+ */
+export interface DisplayMeal {
+    title: string;
+    description: string;
+    image_url: string | null;
+    ingredients: Ingredient[];
+    instructions: string[];
+}
 
-export interface Vote {
+export interface SavedMeal {
     id: string;
-    sessionId: string;
-    mealId: string;
-    guestId: string;
-    voteType: VoteType;
-    createdAt: string;
+    user_id: string;
+    title: string;
+    description: string;
+    image_url: string | null;
+    ingredients: Ingredient[];
+    instructions: string[];
+    position: number;
+    created_at: string;
 }
 
-export interface Guest {
+export interface MySession {
     id: string;
-    sessionId: string;
-    hasVoted: boolean;
-    joinedAt: string;
+    vibe: string;
+    headcount: number;
+    dietary: string[];
+    share_token: string;
+    status: SessionStatus;
+    created_at: string;
+    expires_at: string;
+    voter_count: number;
 }
 
-export interface VotingProgress {
-    totalGuests: number;
-    guestsCompleted: number;
-    progressPercentage: number;
-    winnerId?: string;
-}
-
-export interface VotingStatus {
-    hasVoted: boolean;
-    currentMealIndex: number;
-    totalMeals: number;
-}
-
-// API Response types
-export interface ApiResponse<T> {
-    success: boolean;
-    data: T;
-    message?: string;
-}
-
-export interface ApiError {
-    success: false;
-    error: string;
-    message: string;
-    statusCode: number;
-}
-
-export interface AuthResponse {
-    token: string;
-    user: User;
-}
-
-export interface MagicLinkResponse {
-    message: string;
+export interface AuthUser {
+    id: string;
     email: string;
 }
 
-export interface SessionCreateRequest {
-    vibe: string;
-    headcount: number;
-    dietaryRestrictions: DietaryRestriction;
-}
-
-export interface VoteRequest {
-    sessionId: string;
-    mealId: string;
-    guestId: string;
-    voteType: VoteType;
-}
-
-export interface ShareLinkResponse {
-    share_link: string;
-    share_token: string;
-}
-
-export interface WinnerResponse {
-    winner: Meal;
-    session: Session;
+export interface DietaryRestrictions {
+    vegan: boolean;
+    glutenFree: boolean;
 }
 
 // Made with Bob

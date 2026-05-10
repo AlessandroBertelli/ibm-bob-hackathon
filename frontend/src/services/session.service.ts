@@ -1,71 +1,38 @@
-// Session management service
+// Session service — wraps the backend /api/sessions endpoints.
 
 import api from './api';
-import type { Session, SessionCreateRequest, ShareLinkResponse, SessionStatus } from '../types';
+import type { MySession, SessionWithMeals } from '../types';
 
-/**
- * Create a new session with meal generation
- */
-export const createSession = async (data: SessionCreateRequest): Promise<Session> => {
-    const response = await api.post<{ success: boolean; session: Session; message?: string }>('/sessions', data);
-    return response.data.session;
+export interface CreateSessionInput {
+    vibe: string;
+    headcount: number;
+    dietary: string[];
+    selected_saved_meal_ids: string[];
+}
+
+export const createSession = async (input: CreateSessionInput): Promise<SessionWithMeals> => {
+    const { data } = await api.post<{ session: SessionWithMeals }>('/sessions', input);
+    return data.session;
 };
 
-/**
- * Get session by ID (for host)
- */
-export const getSession = async (sessionId: string): Promise<Session> => {
-    const response = await api.get<{ success: boolean; session: Session }>(`/sessions/${sessionId}`);
-    return response.data.session;
+export const getSession = async (id: string): Promise<SessionWithMeals> => {
+    const { data } = await api.get<{ session: SessionWithMeals }>(`/sessions/${id}`);
+    return data.session;
 };
 
-/**
- * Get session by share token (for guests)
- */
-export const getSessionByToken = async (token: string): Promise<Session> => {
-    const response = await api.get<{ success: boolean; session: Session }>(`/sessions/token/${token}`);
-    return response.data.session;
+export const getSessionByToken = async (token: string): Promise<SessionWithMeals> => {
+    const { data } = await api.get<{ session: SessionWithMeals }>(`/sessions/token/${token}`);
+    return data.session;
 };
 
-/**
- * Generate shareable voting link for session
- */
-export const generateShareLink = async (sessionId: string): Promise<ShareLinkResponse> => {
-    const response = await api.post<ShareLinkResponse>(`/sessions/${sessionId}/share-link`);
-    return response.data;
+export const regenerateSession = async (id: string): Promise<SessionWithMeals> => {
+    const { data } = await api.post<{ session: SessionWithMeals }>(`/sessions/${id}/regenerate`);
+    return data.session;
 };
 
-/**
- * Join a session as a guest
- */
-export const joinSession = async (sessionId: string, guestId: string): Promise<void> => {
-    await api.post(`/sessions/${sessionId}/join`, { guestId });
-};
-
-/**
- * Update session status
- */
-export const updateSessionStatus = async (
-    sessionId: string,
-    status: SessionStatus
-): Promise<Session> => {
-    const response = await api.patch<Session>(`/sessions/${sessionId}/status`, { status });
-    return response.data;
-};
-
-/**
- * Regenerate meal options for a session
- */
-export const regenerateMeals = async (sessionId: string): Promise<Session> => {
-    const response = await api.post<Session>(`/sessions/${sessionId}/regenerate`);
-    return response.data;
-};
-
-/**
- * Delete a session
- */
-export const deleteSession = async (sessionId: string): Promise<void> => {
-    await api.delete(`/sessions/${sessionId}`);
+export const listMySessions = async (): Promise<MySession[]> => {
+    const { data } = await api.get<{ sessions: MySession[] }>('/sessions/mine');
+    return data.sessions;
 };
 
 // Made with Bob

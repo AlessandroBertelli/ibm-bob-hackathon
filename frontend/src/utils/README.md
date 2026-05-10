@@ -1,35 +1,10 @@
 # Utils
 
-This directory contains utility functions and helper modules.
+Pure helpers and small persisted-state utilities.
 
-## Utility Files to Implement
+| File | Purpose |
+|---|---|
+| storage.ts | LocalStorage helpers: per-session guest tokens, the post-sign-in redirect path, and the mock-mode auth token. Wrapped in try/catch so private-mode browsers don't crash. |
+| helpers.ts | `formatIngredientDisplay`, `copyToClipboard`, `validateEmail`, `getShareUrl`, `getResultsUrl`, `debounce`. |
 
-- **constants.ts**: Application-wide constants
-- **validators.ts**: Input validation functions
-- **formatters.ts**: Data formatting utilities (dates, currency, etc.)
-- **storage.ts**: LocalStorage/SessionStorage helpers
-- **animations.ts**: Animation configuration for Framer Motion
-- **helpers.ts**: General helper functions
-
-## Best Practices
-
-- Keep functions pure when possible
-- Export individual functions, not default exports
-- Include unit tests for complex utilities
-- Document function parameters and return types
-- Use descriptive function names
-
-## Example
-
-```typescript
-export const formatCurrency = (amount: number, currency = 'USD'): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-  }).format(amount);
-};
-
-export const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+User-facing strings go in [`../i18n/en.ts`](../i18n/en.ts) — never hardcode them here.

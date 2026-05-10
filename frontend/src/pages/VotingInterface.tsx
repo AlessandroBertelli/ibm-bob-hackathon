@@ -1,158 +1,112 @@
-// Tinder-style voting interface (Screen 3 - Guest View)
+// Screen 3 — Guest swipe voting. One card stack, two action buttons, single
+// "see live results" CTA when done. No inline status panel, no winner page.
 
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { Button } from '../components/Button';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { SwipeCard } from '../components/SwipeCard';
-import { MealCard } from '../components/MealCard';
 import { ProgressBar } from '../components/ProgressBar';
+import { SwipeMealCard } from '../components/meals/SwipeMealCard';
 import { useSwipe } from '../hooks/useSwipe';
-import { useSession } from '../hooks/useSession';
-import { generateGuestId } from '../utils/helpers';
-import { getGuestId, setGuestId } from '../utils/storage';
-import * as voteService from '../services/vote.service';
-import type { VotingProgress } from '../types';
-import { VoteType } from '../types';
-import toast from 'react-hot-toast';
+import { useGuestSession } from '../hooks/useGuestSession';
+import { castVote } from '../services/vote.service';
+import { getSessionByToken } from '../services/session.service';
+import type { SessionWithMeals, VoteValue } from '../types';
+import { t } from '../i18n/en';
 
 export const VotingInterface = () => {
     const { token } = useParams<{ token: string }>();
     const navigate = useNavigate();
-    const { session, isLoading, error, loadSessionByToken } = useSession();
-    const [guestId] = useState<string>(() => {
-        // Initialize guest ID on mount
-        let id = getGuestId();
-        if (!id) {
-            id = generateGuestId();
-            setGuestId(id);
-        }
-        return id;
-    });
-    const [isVoting, setIsVoting] = useState(false);
-    const [votingComplete, setVotingComplete] = useState(false);
-    const [showStatus, setShowStatus] = useState(false);
-    const [votingProgress, setVotingProgress] = useState<VotingProgress | null>(null);
-    const [isLoadingProgress, setIsLoadingProgress] = useState(false);
 
-    // Load session by token
+    const [session, setSession] = useState<SessionWithMeals | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(!!token);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [completed, setCompleted] = useState(false);
+    const [votingMeal, setVotingMeal] = useState<string | null>(null);
+
+    const { token: guestToken, error: guestError } = useGuestSession(session?.id);
+
     useEffect(() => {
-        if (token) {
-            loadSessionByToken(token);
-        }
-    }, [token, loadSessionByToken]);
-
-    // Auto-refresh voting progress when status is shown
-    useEffect(() => {
-        if (!showStatus || !session) return;
-
-        const fetchVotingProgress = async () => {
-            setIsLoadingProgress(true);
+        if (!token) return;
+        let cancelled = false;
+        (async () => {
             try {
-                const progress = await voteService.getProgress(session.id);
-                setVotingProgress(progress);
+                const s = await getSessionByToken(token);
+                if (!cancelled) setSession(s);
             } catch (err) {
-                console.error('Failed to fetch voting progress:', err);
+                if (!cancelled) setLoadError(err instanceof Error ? err.message : 'Error');
             } finally {
-                setIsLoadingProgress(false);
+                if (!cancelled) setIsLoading(false);
             }
+        })();
+        return () => {
+            cancelled = true;
         };
+    }, [token]);
 
-        // Fetch immediately
-        fetchVotingProgress();
-
-        // Set up polling every 3 seconds
-        const interval = setInterval(fetchVotingProgress, 3000);
-
-        return () => clearInterval(interval);
-    }, [showStatus, session]);
-
-    const handleVote = async (mealIndex: number, voteType: VoteType) => {
-        if (!session || !guestId) return;
-
-        const meal = session.meals[mealIndex];
-        setIsVoting(true);
-
+    const submitVote = async (idx: number, value: VoteValue) => {
+        if (!session || !guestToken) return;
+        const meal = session.meals[idx];
+        setVotingMeal(meal.id);
         try {
-            await voteService.submitVote(session.id, guestId, meal.id, voteType);
+            await castVote(guestToken, meal.id, value);
         } catch (err) {
-            console.error('Failed to submit vote:', err);
-            toast.error('Failed to submit vote');
+            console.error('Vote failed:', err);
+            toast.error(t.vote.voteError);
         } finally {
-            setIsVoting(false);
+            setVotingMeal(null);
         }
     };
 
-    const {
-        currentIndex,
-        swipeLeft,
-        swipeRight,
-        handleDragEnd,
-    } = useSwipe({
+    const { currentIndex, swipeLeft, swipeRight, handleDragEnd } = useSwipe({
         totalCards: session?.meals.length || 0,
-        onSwipeLeft: (index) => handleVote(index, VoteType.NO),
-        onSwipeRight: (index) => handleVote(index, VoteType.YES),
-        onComplete: () => {
-            setVotingComplete(true);
-            toast.success('Voting complete! Waiting for others...');
-        },
+        onSwipeLeft: (i) => submitVote(i, 'no'),
+        onSwipeRight: (i) => submitVote(i, 'yes'),
+        onComplete: () => setCompleted(true),
     });
 
-    // Handle missing token
     if (!token) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="min-h-[80vh] grid place-items-center p-4">
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="bg-white rounded-3xl shadow-2xl p-8 max-w-md text-center"
                 >
-                    <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-20 h-20 bg-red-100 rounded-full grid place-items-center mx-auto mb-4">
                         <span className="text-4xl">⚠️</span>
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                        Invalid Link
+                        {t.vote.invalidLinkTitle}
                     </h2>
-                    <p className="text-gray-600 mb-6">
-                        This voting link is invalid or incomplete. Please request a new link from the session host.
-                    </p>
-                    <Button
-                        variant="primary"
-                        onClick={() => navigate('/')}
-                        fullWidth
-                    >
-                        Go to Home
+                    <p className="text-gray-600 mb-6">{t.vote.invalidLinkBody}</p>
+                    <Button variant="primary" fullWidth onClick={() => navigate('/')}>
+                        {t.vote.toHome}
                     </Button>
                 </motion.div>
             </div>
         );
     }
 
-    // Handle error loading session
-    if (error) {
+    if (loadError || guestError) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="min-h-[80vh] grid place-items-center p-4">
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="bg-white rounded-3xl shadow-2xl p-8 max-w-md text-center"
                 >
-                    <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-20 h-20 bg-red-100 rounded-full grid place-items-center mx-auto mb-4">
                         <span className="text-4xl">❌</span>
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                        Session Not Found
+                        {t.vote.notFoundTitle}
                     </h2>
-                    <p className="text-gray-600 mb-6">
-                        {error}
-                    </p>
-                    <Button
-                        variant="primary"
-                        onClick={() => navigate('/')}
-                        fullWidth
-                    >
-                        Go to Home
+                    <Button variant="primary" fullWidth onClick={() => navigate('/')}>
+                        {t.vote.toHome}
                     </Button>
                 </motion.div>
             </div>
@@ -161,52 +115,33 @@ export const VotingInterface = () => {
 
     if (isLoading || !session) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <LoadingSpinner size="lg" text="Loading session..." />
+            <div className="min-h-[80vh] grid place-items-center">
+                <LoadingSpinner size="lg" text={t.vote.loading} />
             </div>
         );
     }
 
-    if (votingComplete) {
+    if (completed) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="min-h-[80vh] grid place-items-center p-4">
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-white rounded-3xl shadow-2xl p-8 max-w-md text-center"
+                    className="bg-white rounded-3xl shadow-2xl p-8 max-w-md text-center w-full"
                 >
-                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-20 h-20 bg-green-100 rounded-full grid place-items-center mx-auto mb-4">
                         <span className="text-4xl">✓</span>
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                        All Done!
+                        {t.vote.completedTitle}
                     </h2>
-                    <p className="text-gray-600 mb-6">
-                        Your votes have been recorded. Check the live results below!
-                    </p>
-                    <ProgressBar
-                        current={currentIndex}
-                        total={session.meals.length}
-                        label="Your Progress"
-                    />
-
-                    {/* Show Current Status Button - Navigate to Results */}
+                    <p className="text-gray-600 mb-6">{t.vote.completedBody}</p>
                     <Button
                         variant="primary"
-                        onClick={() => navigate(`/winner/${session.id}`)}
                         fullWidth
-                        className="mt-6"
+                        onClick={() => navigate(`/results/${token}`)}
                     >
-                        Show Current Status
-                    </Button>
-
-                    <Button
-                        variant="outline"
-                        onClick={() => navigate(`/winner/${session.id}`)}
-                        fullWidth
-                        className="mt-4"
-                    >
-                        Check Results
+                        {t.vote.toResults}
                     </Button>
                 </motion.div>
             </div>
@@ -214,132 +149,76 @@ export const VotingInterface = () => {
     }
 
     return (
-        <div className="min-h-screen flex flex-col p-4 py-8">
-            {/* Header */}
+        <div className="min-h-[80vh] flex flex-col p-4 py-6">
             <motion.div
-                initial={{ opacity: 0, y: -20 }}
+                initial={{ opacity: 0, y: -16 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center mb-4"
             >
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    {session.vibe}
-                </h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">{session.vibe}</h1>
                 <ProgressBar
                     current={currentIndex}
                     total={session.meals.length}
-                    label="Progress"
+                    label={t.vote.progress}
                     className="max-w-md mx-auto"
                 />
             </motion.div>
 
-            {/* Swipe Card Area */}
             <div className="flex-1 flex items-center justify-center">
-                <div className="relative w-full max-w-md h-150">
-                    {session.meals.map((meal, index) => {
-                        if (index < currentIndex) return null;
-
-                        return (
-                            <SwipeCard
-                                key={meal.id}
-                                onSwipeLeft={swipeLeft}
-                                onSwipeRight={swipeRight}
-                                onDragEnd={handleDragEnd}
-                                className={index === currentIndex ? 'z-10' : 'z-0'}
-                            >
-                                <MealCard meal={meal} showIngredients={false} />
-                            </SwipeCard>
-                        );
-                    })}
+                <div className="relative w-full max-w-md aspect-[3/4]">
+                    <AnimatePresence>
+                        {session.meals.map((meal, index) => {
+                            if (index < currentIndex) return null;
+                            return (
+                                <SwipeCard
+                                    key={meal.id}
+                                    onSwipeLeft={swipeLeft}
+                                    onSwipeRight={swipeRight}
+                                    onDragEnd={handleDragEnd}
+                                    className={index === currentIndex ? 'z-10' : 'z-0'}
+                                >
+                                    <SwipeMealCard meal={meal} />
+                                </SwipeCard>
+                            );
+                        })}
+                    </AnimatePresence>
                 </div>
             </div>
 
-            {/* Action Buttons (for desktop/non-touch) */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex gap-4 justify-center max-w-md mx-auto w-full mt-4"
+                className="flex gap-3 justify-center max-w-md mx-auto w-full mt-4"
             >
                 <Button
                     variant="danger"
                     onClick={swipeLeft}
-                    disabled={isVoting}
+                    disabled={!!votingMeal}
                     className="flex-1"
                 >
                     <span className="text-2xl">👎</span>
-                    <span>No</span>
+                    <span>{t.vote.no}</span>
                 </Button>
                 <Button
                     variant="secondary"
                     onClick={swipeRight}
-                    disabled={isVoting}
+                    disabled={!!votingMeal}
                     className="flex-1"
                 >
                     <span className="text-2xl">👍</span>
-                    <span>Yes</span>
+                    <span>{t.vote.yes}</span>
                 </Button>
             </motion.div>
 
-            {/* Show Current Status Button */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="mt-4"
+            <button
+                type="button"
+                onClick={() => navigate(`/results/${token}`)}
+                className="block mx-auto mt-4 text-sm text-white/85 hover:text-white underline underline-offset-4 transition-colors"
             >
-                <Button
-                    variant="outline"
-                    onClick={() => setShowStatus(!showStatus)}
-                    fullWidth
-                    className="max-w-md mx-auto"
-                >
-                    {showStatus ? 'Hide Status' : 'Show Current Status'}
-                </Button>
+                {t.vote.skipToResults}
+            </button>
 
-                {/* Voting Status Display */}
-                <AnimatePresence>
-                    {showStatus && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="mt-4 p-4 bg-white rounded-xl shadow-lg max-w-md mx-auto"
-                        >
-                            {isLoadingProgress ? (
-                                <LoadingSpinner size="sm" text="Loading status..." />
-                            ) : votingProgress ? (
-                                <div className="space-y-3">
-                                    <div className="text-left">
-                                        <p className="text-sm text-gray-600 mb-1">Voting Status</p>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-lg font-semibold text-gray-900">
-                                                {votingProgress.guestsCompleted} people voted
-                                            </span>
-                                            <span className="text-sm text-green-600 font-medium">
-                                                🔴 Live
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <p className="text-sm text-gray-500">
-                                        Anyone can vote - no limit! Results update in real-time.
-                                    </p>
-                                </div>
-                            ) : (
-                                <p className="text-sm text-gray-500">Unable to load status</p>
-                            )}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </motion.div>
-
-            {/* Instructions */}
-            <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="text-center text-gray-500 text-sm mt-4"
-            >
-                Swipe left for No, right for Yes
-            </motion.p>
+            <p className="text-center text-white/70 text-xs mt-4">{t.vote.instructions}</p>
         </div>
     );
 };

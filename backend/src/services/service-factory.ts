@@ -1,106 +1,81 @@
 /**
- * Service Factory
- * Provides easy switching between real and mock services based on environment
+ * Service factory — picks real or mock implementations based on SERVICE_MODE.
+ *
+ * Routes import `dataService` and `aiService` from here and never touch the
+ * underlying modules directly.
+ *
+ * Production guard: if we detect we're running on Vercel (or NODE_ENV is
+ * production), we refuse to start in mock mode. This prevents a missing /
+ * misspelled `SERVICE_MODE` env var from silently degrading auth to "any
+ * email is accepted".
  */
 
-// Real services
-import realAiService from './ai.service';
-import realFirebaseService from './firebase.service';
-import realEmailService from './email.service';
+import * as realSupabase from './supabase.service';
+import * as mockSupabase from './mock/mock-supabase.service';
 
-// Mock services
-import mockAiService from './mock/mock-ai.service';
-import mockFirebaseService from './mock/mock-firebase.service';
-import mockEmailService from './mock/mock-email.service';
+import * as realAi from './ai.service';
+import * as mockAi from './mock/mock-ai.service';
 
-/**
- * Service mode type
- */
 type ServiceMode = 'mock' | 'test' | 'production';
 
-/**
- * Determine service mode from environment
- * Options: 'mock' | 'test' | 'production'
- * - mock: Uses mock services (no API keys required)
- * - test: Uses real APIs for testing (requires API keys)
- * - production: Full production mode
- */
-const SERVICE_MODE = (process.env.SERVICE_MODE || 'mock') as ServiceMode;
-
-/**
- * Validate service mode
- */
 const validModes: ServiceMode[] = ['mock', 'test', 'production'];
-if (!validModes.includes(SERVICE_MODE)) {
-    console.warn(`⚠️  Invalid SERVICE_MODE: ${SERVICE_MODE}. Defaulting to 'mock'`);
+const raw = (process.env.SERVICE_MODE || '').trim().toLowerCase() as ServiceMode;
+const onVercel = !!process.env.VERCEL || !!process.env.VERCEL_ENV;
+const isProdRuntime = process.env.NODE_ENV === 'production' || onVercel;
+
+if (isProdRuntime && raw !== 'production' && raw !== 'test') {
+    // Hard fail — never serve real users with mock auth.
+    throw new Error(
+        `[service-factory] Refusing to boot: SERVICE_MODE="${raw || '(unset)'}" ` +
+            `in a production runtime (VERCEL=${process.env.VERCEL ?? '-'}, ` +
+            `NODE_ENV=${process.env.NODE_ENV ?? '-'}). ` +
+            `Set SERVICE_MODE=production explicitly.`
+    );
 }
 
-/**
- * Determine if we should use mock services
- */
-const USE_MOCK_SERVICES = SERVICE_MODE === 'mock';
+if (raw && !validModes.includes(raw)) {
+    console.warn(`[service-factory] invalid SERVICE_MODE "${raw}", defaulting to mock`);
+}
 
-/**
- * Log the service mode on startup
- */
-console.log('\n' + '='.repeat(80));
+const SERVICE_MODE: ServiceMode = validModes.includes(raw)
+    ? raw
+    : isProdRuntime
+      ? 'production'
+      : 'mock';
+
+const USE_MOCK = SERVICE_MODE === 'mock';
+
+/* ------------------------------------------------------------------ banner */
+console.log('\n' + '='.repeat(72));
 switch (SERVICE_MODE) {
     case 'mock':
-        console.log('🧪 MOCK MODE - Using mock services (no external APIs required)');
-        console.log('   • AI: Mock meal templates');
-        console.log('   • Database: In-memory storage');
-        console.log('   • Email: Console logging');
+        console.log('🧪 MOCK MODE — in-memory data, mock auth, no external services');
+        console.log('   Pass `Authorization: Bearer mock:<email>` to act as a user.');
         break;
     case 'test':
-        console.log('🔧 TEST MODE - Using real APIs for testing');
-        console.log('   • AI: OpenAI API (requires OPENAI_API_KEY)');
-        console.log('   • Database: Firebase (requires credentials)');
-        console.log('   • Email: SMTP (requires SMTP credentials)');
+        console.log('🔧 TEST MODE — real Supabase + OpenRouter + image providers');
         break;
     case 'production':
-        console.log('🚀 PRODUCTION MODE - Full production services');
-        console.log('   • AI: OpenAI API');
-        console.log('   • Database: Firebase');
-        console.log('   • Email: SMTP');
+        console.log('🚀 PRODUCTION MODE — full external services');
         break;
 }
-console.log('='.repeat(80) + '\n');
+console.log('='.repeat(72) + '\n');
 
-/**
- * AI Service - handles meal generation
- * Exports either real OpenAI service or mock service
- */
-export const aiService = (USE_MOCK_SERVICES ? mockAiService : realAiService) as typeof realAiService;
+/* ------------------------------------------------------------------ exports */
 
-/**
- * Firebase Service - handles database operations
- * Exports either real Firebase service or mock in-memory service
- */
-export const firebaseService = (USE_MOCK_SERVICES ? mockFirebaseService : realFirebaseService) as typeof realFirebaseService;
+export const dataService = (USE_MOCK ? mockSupabase : realSupabase) as typeof realSupabase;
+export const aiService = (USE_MOCK ? mockAi : realAi) as typeof realAi;
 
-/**
- * Email Service - handles email sending
- * Exports either real SMTP service or mock console logging service
- */
-export const emailService = (USE_MOCK_SERVICES ? mockEmailService : realEmailService) as typeof realEmailService;
+export const isUsingMockServices = USE_MOCK;
+export const serviceMode: ServiceMode = SERVICE_MODE;
 
-/**
- * Export service mode for other modules to check
- */
-export const isUsingMockServices = USE_MOCK_SERVICES;
-export const serviceMode = SERVICE_MODE;
-
-/**
- * Get current service configuration info
- */
 export function getServiceInfo() {
     return {
         mode: SERVICE_MODE,
-        useMock: USE_MOCK_SERVICES,
+        useMock: USE_MOCK,
         services: {
-            ai: USE_MOCK_SERVICES ? 'mock' : 'openai',
-            database: USE_MOCK_SERVICES ? 'in-memory' : 'firebase',
-            email: USE_MOCK_SERVICES ? 'console' : 'smtp',
+            data: USE_MOCK ? 'in-memory' : 'supabase',
+            ai: USE_MOCK ? 'mock-templates' : 'openrouter+imagegen',
         },
     };
 }

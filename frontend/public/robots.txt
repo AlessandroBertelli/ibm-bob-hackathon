@@ -1,0 +1,109 @@
+# atavola — robots.txt
+#
+# Default policy: index the marketing surface, keep personalised + API
+# surfaces out of search results. Personalised URLs (sessions / votes /
+# results / profile / auth callback) are unlisted and would only confuse
+# search results if indexed.
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /verify
+Disallow: /vote/
+Disallow: /results/
+Disallow: /session/
+Disallow: /create
+Disallow: /profile/
+
+# AI crawlers — explicit allow on the public surface. They tend to read
+# robots.txt strictly, so absent rules can become absent indexing.
+User-agent: GPTBot
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /verify
+Disallow: /vote/
+Disallow: /results/
+Disallow: /session/
+Disallow: /create
+Disallow: /profile/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /verify
+Disallow: /vote/
+Disallow: /results/
+Disallow: /session/
+Disallow: /create
+Disallow: /profile/
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /verify
+Disallow: /vote/
+Disallow: /results/
+Disallow: /session/
+Disallow: /create
+Disallow: /profile/
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /verify
+Disallow: /vote/
+Disallow: /results/
+Disallow: /session/
+Disallow: /create
+Disallow: /profile/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /verify
+Disallow: /vote/
+Disallow: /results/
+Disallow: /session/
+Disallow: /create
+Disallow: /profile/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /verify
+Disallow: /vote/
+Disallow: /results/
+Disallow: /session/
+Disallow: /create
+Disallow: /profile/
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /verify
+Disallow: /vote/
+Disallow: /results/
+Disallow: /session/
+Disallow: /create
+Disallow: /profile/
+
+User-agent: CCBot
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /verify
+Disallow: /vote/
+Disallow: /results/
+Disallow: /session/
+Disallow: /create
+Disallow: /profile/
+
+Sitemap: https://atavola.ch/sitemap.xml

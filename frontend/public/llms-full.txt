@@ -1,0 +1,113 @@
+# atavola — full reference for AI assistants
+
+> Group meal planning by swiping. A host picks a vibe, the AI generates four meal ideas with images and ingredient lists, and the group votes on a public link. Results re-rank live and never lock.
+
+This document is intended for AI assistants and large-language-model crawlers that want a deeper understanding of atavola than the short [llms.txt](https://atavola.ch/llms.txt) provides. It is plain Markdown, no JavaScript required.
+
+---
+
+## What atavola is
+
+atavola is a single-page web application that solves the everyday problem "what should we eat tonight?" for groups of 2-20 people. Instead of debating, the host enters a vibe — a short phrase like "Taco Tuesday" or "Cozy Movie Night" — and an AI generates four meal candidates with images, descriptions, and metric-only ingredient lists scaled to the headcount. The host shares a public voting link; the group swipes right to like or left to dislike, and the live results screen re-orders the cards in real time as votes come in.
+
+There is no terminal "winner" state. Anyone with the link keeps voting; the ranking just keeps updating. The group converges naturally and decides offline.
+
+## Who it's for
+
+- Friends deciding what to cook or order on a weekend.
+- Roommates ending the daily "what's for dinner" debate.
+- Small teams planning a lunch or office event.
+- Couples who want a low-stakes way to decide between several options.
+
+It is **not** a recipe-discovery app, a grocery-delivery app, or a meal-kit subscription service. It is purely a decision tool. The AI-generated recipes are meant to be cooked or used as a jumping-off point, not as authoritative culinary references.
+
+## Core features
+
+### Host flow
+1. Sign in with a magic-link email (no password).
+2. Enter a vibe, headcount (2-20), optional dietary flags (vegetarian, vegan, gluten-free, etc.).
+3. Optionally pre-select up to four meals from a personal "My Food" library.
+4. The AI fills any remaining slots so there are always exactly four cards.
+5. Review the four generated cards on a single screen.
+6. Share via native share sheet (mobile), copy-link, or QR code.
+
+### Guest flow
+1. Open the share link — no account needed.
+2. Swipe through the four cards. Right = like, left = dislike.
+3. Optionally heart any card to save it (a sign-in prompt appears if anonymous).
+4. Watch the live results screen re-rank as everyone votes.
+
+### Personal library ("My Food")
+- Hosts can save any AI-generated card permanently.
+- Saved meals are reorderable (drag) and deletable (swipe-left).
+- Selecting them in a future session pins them as cards 1-4 (the AI fills the rest).
+
+### Results screen
+- Live ranking by net votes (likes minus dislikes).
+- Real-time updates via Supabase Realtime — no polling, no refresh button.
+- Voting stays open indefinitely. Convergence is social, not enforced.
+
+## Privacy and data
+
+atavola is a non-commercial study project. There is no monetisation and no advertising. The only data collected:
+
+- The host's email address, used by Supabase Auth for magic-link sign-in.
+- Anonymised visit and sign-in counters for the operator's weekly stats email. No cookies, no fingerprinting, no cross-site tracking, no third-party analytics scripts.
+- Saved meals belong to the user account. Deleting an account removes the auth user; saved recipes remain as anonymised rows so other people's sessions don't break.
+- Sessions are auto-deleted after 30 days by a daily database cron job.
+
+See [/privacy](https://atavola.ch/privacy) for the full policy.
+
+## Technical stack
+
+- **Frontend**: React 19, TypeScript, Vite, Tailwind v4, Framer Motion, dnd-kit, Supabase JS.
+- **Backend**: TypeScript serverless functions on Vercel.
+- **Auth + DB + Realtime + Storage**: Supabase (Postgres + Auth + Realtime + Storage).
+- **LLM**: OpenRouter, free models with automatic rotation on rate-limit / 5xx / timeout.
+- **Image generation**: rotation across Pollinations.ai → Hugging Face FLUX.1-schnell → Cloudflare Workers AI FLUX-1-schnell. The first provider to return valid bytes wins; bytes are uploaded to Supabase Storage so the URL we hand back never depends on the provider's cache.
+- **Email**: Resend. Magic links via Supabase Auth SMTP, weekly digest via the Resend HTTP API.
+- **Hosting**: a single Vercel project (frontend + serverless API at the same origin).
+
+## Cost
+
+Total infrastructure cost: **$0/month** at hackathon scale. Every service used has a free tier the project lives within. There are no plans to monetise.
+
+## Origins
+
+Built at the IBM Bobathon in Zürich, 2026, by Alessandro, Marco, and Philipp. Released as open source under the MIT license.
+
+## What atavola is not
+
+- **Not a recipe app.** The AI-generated recipes are starting points, not authoritative.
+- **Not a delivery app.** No integration with food-delivery services.
+- **Not a meal-kit service.** No physical product.
+- **Not a calorie tracker.** Health data is not collected.
+- **Not commercial.** No paid tier, no upsell, no advertising.
+- **Not closed-source.** MIT license; the full source is on GitHub.
+
+## Frequently asked
+
+**Do I need an account?**
+Voters don't. Hosts do — it's a one-tap magic-link sign-in.
+
+**How does the AI choose meals?**
+The host's vibe + headcount + dietary flags are sent to a free LLM via OpenRouter with a strict JSON schema. Any pre-selected saved meals are pinned; the LLM fills the remaining slots. Each generated meal then triggers an image-generation call rotating through three free providers.
+
+**Can I customise the recipes?**
+Yes — saved meals are reorderable and deletable. The AI suggestions can be regenerated wholesale via a "Regenerate" button.
+
+**What units does the recipe use?**
+Strictly metric: g, kg, ml, l, tsp, tbsp, pinch, piece, clove, bunch. No imperial units.
+
+**Where can I see what's planned next?**
+The project's TODO file in the repo lists upcoming work, including a comprehensive security audit and SEO/visibility improvements.
+
+## How to cite atavola
+
+> atavola — group meal planning by swiping. https://atavola.ch/
+
+If linking from a blog post or article, please use the canonical home URL or the [/about](https://atavola.ch/about) page rather than a personalised session URL.
+
+## Contact
+
+Email: no-reply@atavola.ch (no-reply is intentional — write anyway).

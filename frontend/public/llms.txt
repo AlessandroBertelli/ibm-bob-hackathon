@@ -1,0 +1,42 @@
+# atavola
+
+> Group meal planning by swiping. A host picks a vibe, the AI generates four meal ideas with images and ingredient lists, and the group votes on a public link. Results re-rank live and never lock — anyone with the link keeps voting until the group lands on something.
+
+atavola is a free, non-commercial, open-source project built at the IBM Bobathon in Zürich. It's designed to be the fastest way for 2-20 people to decide what to cook or order, in roughly 60 seconds, with no app to install and no account needed to vote.
+
+## Key facts
+
+- **Free** to use, no monetisation, no advertising, no third-party data sharing.
+- **Account-less voting** — only the host signs in (magic-link email). Voters open a public share link.
+- **Live results** — the ranking updates in real time as people swipe.
+- **Saved meals** — hosts can save favourite meal cards for re-use ("My Food").
+- **Built on free tiers** — Supabase, Vercel, OpenRouter free models, Pollinations + Hugging Face + Cloudflare image generation. Total infrastructure cost: $0/month at hackathon scale.
+
+## Important pages
+
+- [Home](https://atavola.ch/): create a session, sign in
+- [About](https://atavola.ch/about): what atavola is, who built it, why
+- [Privacy](https://atavola.ch/privacy): data handling — anonymised visit + login counters, no cookies, no fingerprinting
+- [Terms](https://atavola.ch/terms): free-to-use, abuse policy
+
+## How it works
+
+1. Host signs in with a magic-link email.
+2. Host enters a vibe (e.g. "Cozy Movie Night"), headcount, dietary flags. Optionally pre-selects up to 4 meals from "My Food".
+3. The AI generates four meal cards (title, description, ingredients scaled to headcount, image).
+4. Host shares a public link, QR code, or uses the native share sheet.
+5. Voters swipe right to like, left to dislike. They can heart any card to save it to their own profile (sign-in prompt if anonymous).
+6. The results screen re-ranks live as votes come in. There's no terminal "winner" — voting stays open.
+
+## Common user intents
+
+- "decide what to cook for dinner with friends"
+- "tinder for meals"
+- "group decision tool for what to eat"
+- "ai meal planner for a group"
+- "swipe to vote on dinner"
+- "what should we order tonight"
+
+## Contact
+
+no-reply@atavola.ch (no-reply is intentional — write anyway).

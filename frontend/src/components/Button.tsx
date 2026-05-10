@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
+import { t } from '../i18n/en';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -19,10 +20,19 @@ interface ButtonProps {
     children: ReactNode;
 }
 
+// Brand system:
+//   • primary = orange→red gradient. Used for every primary action (sign-in,
+//     create session, share, "back home"). Matches the logo word-mark, the
+//     header avatar, the OG card, and MySessionsList's primary CTA.
+//   • outline = neutral idle / orange hover.
+//   • secondary = green. Reserved for the affirmative vote (👍 yes) and
+//     other "confirm positive" UX — never a generic CTA, so it stays
+//     semantically green.
+//   • danger = red. Reserved for destructive + the negative vote (👎 no).
 const variantStyles: Record<ButtonVariant, string> = {
-    primary: 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:from-blue-700 hover:to-cyan-600 shadow-lg',
+    primary: 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 shadow-lg',
     secondary: 'bg-gradient-to-r from-emerald-500 to-green-500 text-white hover:from-emerald-600 hover:to-green-600 shadow-lg',
-    outline: 'border-2 border-gray-300 text-gray-700 hover:border-blue-600 hover:text-blue-600 bg-white',
+    outline: 'border-2 border-gray-300 text-gray-700 hover:border-orange-500 hover:text-orange-600 bg-white',
     danger: 'bg-red-500 text-white hover:bg-red-600 shadow-lg',
 };
 
@@ -78,7 +88,7 @@ export const Button = ({
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         />
                     </svg>
-                    <span>Loading...</span>
+                    <span>{t.common.loading}</span>
                 </>
             ) : (
                 <>

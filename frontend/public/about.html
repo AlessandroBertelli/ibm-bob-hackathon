@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+        <title>About atavola — group meal planning by swiping</title>
+        <meta
+            name="description"
+            content="atavola is a free, non-commercial study project that turns group meal decisions into a 60-second swipe. Built at the IBM Bobathon in Zürich, 2026."
+        />
+        <link rel="canonical" href="https://atavola.ch/about" />
+        <meta name="theme-color" content="#f97316" />
+        <meta name="color-scheme" content="dark light" />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
+
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="atavola" />
+        <meta property="og:title" content="About atavola — group meal planning by swiping" />
+        <meta
+            property="og:description"
+            content="A free, non-commercial study project that turns group meal decisions into a 60-second swipe."
+        />
+        <meta property="og:url" content="https://atavola.ch/about" />
+        <meta property="og:image" content="https://atavola.ch/og.svg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="About atavola" />
+        <meta name="twitter:description" content="A free, non-commercial study project for group meal decisions." />
+        <meta name="twitter:image" content="https://atavola.ch/og.svg" />
+
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+        <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "AboutPage",
+                "name": "About atavola",
+                "url": "https://atavola.ch/about",
+                "inLanguage": "en",
+                "isPartOf": { "@type": "WebSite", "name": "atavola", "url": "https://atavola.ch/" },
+                "about": {
+                    "@type": "SoftwareApplication",
+                    "name": "atavola",
+                    "applicationCategory": "LifestyleApplication",
+                    "operatingSystem": "Web",
+                    "isAccessibleForFree": true
+                }
+            }
+        </script>
+
+        <style>
+            :root {
+                color-scheme: dark light;
+                --bg: #061224;
+                --fg: #f3f4f6;
+                --muted: #9ca3af;
+                --accent: #fb923c;
+                --accent-strong: #ef4444;
+                --card: rgba(255, 255, 255, 0.04);
+                --border: rgba(255, 255, 255, 0.08);
+            }
+            * { box-sizing: border-box; }
+            html, body { margin: 0; padding: 0; }
+            body {
+                font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(180deg, #061224 0%, #0a0a0a 100%);
+                color: var(--fg);
+                line-height: 1.65;
+                min-height: 100vh;
+            }
+            header.site {
+                padding: 1.5rem 1.25rem;
+                border-bottom: 1px solid var(--border);
+            }
+            header.site nav {
+                max-width: 760px;
+                margin: 0 auto;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+            }
+            header.site a.brand {
+                font-size: 1.5rem;
+                font-weight: 800;
+                color: var(--fg);
+                text-decoration: none;
+                letter-spacing: -0.02em;
+            }
+            header.site nav ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                gap: 1.25rem;
+                font-size: 0.95rem;
+            }
+            header.site nav a {
+                color: var(--muted);
+                text-decoration: none;
+            }
+            header.site nav a:hover { color: var(--fg); }
+            main {
+                max-width: 760px;
+                margin: 0 auto;
+                padding: 3rem 1.25rem 5rem;
+            }
+            h1 {
+                font-size: clamp(2rem, 5vw, 3rem);
+                line-height: 1.15;
+                letter-spacing: -0.02em;
+                margin: 0 0 0.75rem;
+            }
+            .lede {
+                font-size: 1.2rem;
+                color: var(--muted);
+                margin: 0 0 2.5rem;
+            }
+            h2 {
+                font-size: 1.5rem;
+                margin: 2.5rem 0 0.75rem;
+                letter-spacing: -0.01em;
+            }
+            h3 {
+                font-size: 1.05rem;
+                margin: 1.5rem 0 0.5rem;
+                color: var(--accent);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            p, ul, ol { margin: 0 0 1rem; }
+            ul, ol { padding-left: 1.25rem; }
+            li { margin-bottom: 0.4rem; }
+            a { color: var(--accent); }
+            a:hover { color: var(--accent-strong); }
+            .card {
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 1rem;
+                padding: 1.25rem 1.5rem;
+                margin: 1.5rem 0;
+            }
+            footer {
+                max-width: 760px;
+                margin: 0 auto;
+                padding: 2rem 1.25rem 3rem;
+                border-top: 1px solid var(--border);
+                font-size: 0.9rem;
+                color: var(--muted);
+            }
+            footer a { color: var(--muted); }
+            footer a:hover { color: var(--fg); }
+            footer ul { list-style: none; padding: 0; display: flex; gap: 1.25rem; flex-wrap: wrap; }
+        </style>
+    </head>
+    <body>
+        <header class="site">
+            <nav>
+                <a href="/" class="brand">atavola</a>
+                <ul>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/privacy">Privacy</a></li>
+                    <li><a href="/terms">Terms</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main>
+            <article>
+                <h1>About atavola</h1>
+                <p class="lede">
+                    atavola turns "what should we eat tonight?" into a 60-second swipe.
+                    Free, non-commercial, hackathon-born.
+                </p>
+
+                <section>
+                    <h2>What it is</h2>
+                    <p>
+                        atavola is a small web app that helps groups of 2-20 people decide what to cook
+                        or order. A host picks a vibe — a phrase like "Cozy Movie Night" or "Taco
+                        Tuesday" — and an AI generates four meal candidates with images, descriptions,
+                        and metric ingredient lists scaled to the headcount. The host shares a public
+                        voting link; everyone swipes right to like or left to dislike. The results
+                        screen re-orders cards in real time as votes come in.
+                    </p>
+                    <p>
+                        There is no terminal "winner" state. The link stays open, the ranking keeps
+                        updating, and the group converges naturally.
+                    </p>
+                </section>
+
+                <section>
+                    <h2>Who built it</h2>
+                    <p>
+                        atavola was built at the IBM Bobathon in Zürich, 2026, by Alessandro, Marco,
+                        and Philipp. It started as a hackathon project and was kept alive afterwards
+                        as a free, open-source study project. There are no plans to monetise.
+                    </p>
+                </section>
+
+                <section>
+                    <h2>How it's built</h2>
+                    <p>
+                        atavola runs entirely on free tiers. The total infrastructure cost is
+                        $0/month at hackathon scale. The stack:
+                    </p>
+                    <ul>
+                        <li><strong>Frontend</strong>: React 19, TypeScript, Vite, Tailwind v4, Framer Motion, dnd-kit.</li>
+                        <li><strong>Backend</strong>: Vercel serverless functions (TypeScript).</li>
+                        <li><strong>Auth + DB + Realtime + Storage</strong>: Supabase.</li>
+                        <li><strong>LLM</strong>: OpenRouter, free models with automatic rotation.</li>
+                        <li><strong>Image generation</strong>: rotation across Pollinations.ai, Hugging Face FLUX.1-schnell, and Cloudflare Workers AI.</li>
+                        <li><strong>Email</strong>: Resend (magic links via Supabase SMTP, weekly digest via the Resend HTTP API).</li>
+                        <li><strong>Hosting</strong>: a single Vercel project at the same origin.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Why it exists</h2>
+                    <p>
+                        Most "what should we eat?" decisions are bottlenecked by either a single person
+                        deciding for everyone or an endless thread that converges on nothing. atavola
+                        replaces both with a 60-second swipe game. The app's job is to remove friction
+                        from a tiny daily decision, not to be a recipe app, a calorie tracker, or a
+                        delivery service.
+                    </p>
+                </section>
+
+                <section>
+                    <h2>Open source</h2>
+                    <p>
+                        atavola is MIT-licensed. The code, the schema, the deployment guide, and the
+                        threat model are all in the public repository. Pull requests welcome; security
+                        reports go to the address below.
+                    </p>
+                </section>
+
+                <section>
+                    <h2>Contact</h2>
+                    <p>
+                        <a href="mailto:no-reply@atavola.ch">no-reply@atavola.ch</a> — the no-reply
+                        prefix is intentional, but write anyway if you have something to say.
+                    </p>
+                </section>
+            </article>
+        </main>
+
+        <footer>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/privacy">Privacy</a></li>
+                <li><a href="/terms">Terms</a></li>
+            </ul>
+            <p style="margin-top: 1rem;">© 2026 atavola — MIT licensed.</p>
+        </footer>
+    </body>
+</html>

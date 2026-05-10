@@ -1,27 +1,31 @@
-// Main App component with routing
+// Top-level routing.
 
-import { Routes, Route } from 'react-router-dom';
-import { Landing } from './pages/Landing.tsx';
-import { AuthVerify } from './pages/AuthVerify.tsx';
-import { CreateSession } from './pages/CreateSession.tsx';
-import { SessionView } from './pages/SessionView.tsx';
-import { VotingInterface } from './pages/VotingInterface.tsx';
-import { Winner } from './pages/Winner.tsx';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AppLayout } from './components/layout/AppLayout';
+import { Landing } from './pages/Landing';
+import { AuthVerify } from './pages/AuthVerify';
+import { CreateSession } from './pages/CreateSession';
+import { SessionView } from './pages/SessionView';
+import { VotingInterface } from './pages/VotingInterface';
+import { LiveResults } from './pages/LiveResults';
+import { SavedMeals } from './pages/SavedMeals';
 
 function App() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-yellow-50">
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/verify" element={<AuthVerify />} />
-        <Route path="/auth/verify" element={<AuthVerify />} />
-        <Route path="/create" element={<CreateSession />} />
-        <Route path="/session/:id" element={<SessionView />} />
-        <Route path="/vote/:token" element={<VotingInterface />} />
-        <Route path="/winner/:sessionId" element={<Winner />} />
-      </Routes>
-    </div>
-  );
+    return (
+        <Routes>
+            <Route element={<AppLayout />}>
+                <Route path="/" element={<Landing />} />
+                <Route path="/verify" element={<AuthVerify />} />
+                <Route path="/auth/verify" element={<AuthVerify />} />
+                <Route path="/create" element={<CreateSession />} />
+                <Route path="/session/:id" element={<SessionView />} />
+                <Route path="/vote/:token" element={<VotingInterface />} />
+                <Route path="/results/:token" element={<LiveResults />} />
+                <Route path="/profile/saved-meals" element={<SavedMeals />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+        </Routes>
+    );
 }
 
 export default App;

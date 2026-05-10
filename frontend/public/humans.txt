@@ -1,0 +1,29 @@
+/* TEAM */
+
+    Alessandro — co-creator
+    Marco       — co-creator
+    Philipp     — co-creator
+                  https://linkedin.com/in/philipp-roehner
+
+    Built at the IBM Bobathon, Zürich, 2026.
+
+/* SITE */
+
+    Last update: 2026-05-07
+    Language:    English
+    License:     MIT
+    Doctype:     HTML5
+    Standards:   Schema.org JSON-LD, OpenGraph, Twitter Card, llms.txt
+    Source:      https://github.com/  (link in repo)
+
+/* TECHNOLOGY */
+
+    Frontend:    React 19, TypeScript, Vite, Tailwind v4, Framer Motion, dnd-kit
+    Backend:     Vercel Serverless Functions (TypeScript)
+    Auth + DB:   Supabase (Postgres + Auth + Realtime + Storage)
+    LLM:         OpenRouter (free models, automatic rotation)
+    Image gen:   Pollinations.ai → Hugging Face FLUX.1-schnell → Cloudflare Workers AI
+    Email:       Resend (magic links via Supabase SMTP, weekly digest via HTTP API)
+    Hosting:     Vercel (frontend + serverless API at the same origin)
+
+# Made with Bob

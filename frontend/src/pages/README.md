@@ -1,18 +1,15 @@
 # Pages
 
-This directory contains page-level components that represent different routes in the application.
+Top-level route components. Wired up in [`../App.tsx`](../App.tsx); each is rendered inside the global `AppLayout`.
 
-## Pages to Implement
+| Path | File | Role |
+|---|---|---|
+| `/` | Landing.tsx | Sign-in (magic link). Redirects to `/create` when already authenticated. |
+| `/auth/verify` (alias `/verify`) | AuthVerify.tsx | Finalises the magic-link callback (PKCE `?code=` or fragment tokens) and redirects via the `redirect_to` query param. |
+| `/create` | CreateSession.tsx | Screen 1 — vibe + headcount + diet flags + My Food picker (max 4). Auth-gated. |
+| `/session/:id` | SessionView.tsx | Screen 2 — host review of the 4 generated cards, public-link disclosure, share modal + QR code. |
+| `/vote/:token` | VotingInterface.tsx | Screen 3 — anonymous swipe voting. Mints a guest token via the backend and casts votes through the `cast_vote` RPC. |
+| `/results/:token` | LiveResults.tsx | Screen 4 — Realtime-sorted ranking, no terminal "winner". Heart button on each row. |
+| `/profile/saved-meals` | SavedMeals.tsx | "My Food" management — search, drag to reorder, swipe-left to delete. Auth-gated. |
 
-- **Home**: Landing page with app introduction
-- **Login**: Authentication page with magic link
-- **Dashboard**: User's groups and active sessions
-- **CreateGroup**: Form to create a new food decision group
-- **GroupSession**: Main swipe interface for a group session
-- **Results**: Display matched restaurants
-- **Profile**: User settings and preferences
-
-## Naming Convention
-
-- Use PascalCase for page files: `HomePage.tsx`, `GroupSession.tsx`
-- Each page should be a default export
+There is no `/winner/*` route. The terminal "winner" concept was retired — `/results/:token` is the only post-vote screen and never locks.

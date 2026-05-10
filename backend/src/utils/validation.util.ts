@@ -1,228 +1,129 @@
 /**
- * Validation Utility Functions
- * Provides input validation helpers for the API
+ * Lightweight input validators. Throw ValidationError on bad input; return
+ * normalised values on success.
  */
 
 import { ValidationError } from './errors.util';
+import { CreateSessionRequest, VoteValue } from '../types/session.types';
+import { ReorderSavedMealsRequest } from '../types/saved-meal.types';
+
+const ALLOWED_DIETARY = ['vegan', 'vegetarian', 'gluten-free', 'gluten_free', 'dairy-free', 'nut-free', 'halal', 'kosher'];
+const MAX_PRESELECTED = 4;
+
+export function isUuid(value: unknown): value is string {
+    return (
+        typeof value === 'string' &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+    );
+}
+
+export function sanitizeString(input: unknown, max = 500): string {
+    if (typeof input !== 'string') return '';
+    return input.replace(/<[^>]*>/g, '').trim().slice(0, max);
+}
+
+export function validateCreateSession(body: unknown): Required<
+    Pick<CreateSessionRequest, 'vibe' | 'headcount' | 'dietary'>
+> & { selected_saved_meal_ids: string[] } {
+    if (!body || typeof body !== 'object') {
+        throw new ValidationError('Request body required');
+    }
+    const b = body as Record<string, unknown>;
+
+    const vibe = sanitizeString(b.vibe, 100);
+    if (vibe.length < 3) throw new ValidationError('vibe must be at least 3 characters');
+
+    const headcount = Number(b.headcount);
+    if (!Number.isInteger(headcount) || headcount < 2 || headcount > 20) {
+        throw new ValidationError('headcount must be an integer between 2 and 20');
+    }
+
+    const dietaryRaw = Array.isArray(b.dietary) ? b.dietary : [];
+    const dietary = dietaryRaw
+        .map((x) => sanitizeString(x, 30).toLowerCase())
+        .filter((x) => ALLOWED_DIETARY.includes(x));
+
+    const selectedRaw = Array.isArray(b.selected_saved_meal_ids) ? b.selected_saved_meal_ids : [];
+    if (selectedRaw.length > MAX_PRESELECTED) {
+        throw new ValidationError(`At most ${MAX_PRESELECTED} pre-selected meals allowed`);
+    }
+    const selected_saved_meal_ids = selectedRaw.filter(isUuid) as string[];
+    if (selected_saved_meal_ids.length !== selectedRaw.length) {
+        throw new ValidationError('selected_saved_meal_ids contains an invalid id');
+    }
+
+    return { vibe, headcount, dietary, selected_saved_meal_ids };
+}
+
+export function validateCastVote(body: unknown): {
+    guest_token: string;
+    session_meal_id: string;
+    value: VoteValue;
+} {
+    if (!body || typeof body !== 'object') throw new ValidationError('Request body required');
+    const b = body as Record<string, unknown>;
+
+    const guest_token = sanitizeString(b.guest_token, 64);
+    const session_meal_id = sanitizeString(b.session_meal_id, 64);
+    const valueRaw = sanitizeString(b.value, 8).toLowerCase();
+
+    if (!guest_token) throw new ValidationError('guest_token required');
+    if (!isUuid(session_meal_id)) throw new ValidationError('session_meal_id must be a UUID');
+    if (valueRaw !== 'yes' && valueRaw !== 'no') {
+        throw new ValidationError('value must be "yes" or "no"');
+    }
+    return { guest_token, session_meal_id, value: valueRaw as VoteValue };
+}
+
+export function validateMintGuest(body: unknown): { session_id: string } {
+    if (!body || typeof body !== 'object') throw new ValidationError('Request body required');
+    const b = body as Record<string, unknown>;
+    const session_id = sanitizeString(b.session_id, 64);
+    if (!isUuid(session_id)) throw new ValidationError('session_id must be a UUID');
+    return { session_id };
+}
 
 /**
- * Validate email format
- * @param email - Email address to validate
- * @returns true if valid, false otherwise
+ * The only field the client supplies is `source_session_meal_id`. Title,
+ * description, ingredients and image_url are derived server-side from the
+ * referenced session_meal so users can't:
+ *   • host-spoof image URLs to tracking pixels,
+ *   • inject arbitrary HTML/text into their saved collection,
+ *   • bloat Postgres jsonb with gigantic ingredient arrays.
  */
-export const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-};
+export function validateCreateSavedMeal(body: unknown): { source_session_meal_id: string } {
+    if (!body || typeof body !== 'object') throw new ValidationError('Request body required');
+    const b = body as Record<string, unknown>;
 
-/**
- * Validate email and throw error if invalid
- * @param email - Email address to validate
- * @throws ValidationError if email is invalid
- */
-export const validateEmail = (email: string): void => {
-    if (!email || typeof email !== 'string') {
-        throw new ValidationError('Email is required');
+    const source_session_meal_id =
+        typeof b.source_session_meal_id === 'string' && isUuid(b.source_session_meal_id)
+            ? b.source_session_meal_id
+            : null;
+
+    if (!source_session_meal_id) {
+        throw new ValidationError('source_session_meal_id required (must be a UUID)');
     }
+    return { source_session_meal_id };
+}
 
-    if (!isValidEmail(email)) {
-        throw new ValidationError('Invalid email format');
+// Hard cap on a single reorder payload. Saved-meal collections are tiny in
+// practice (< 100 entries), but the bulk-reorder endpoint runs an UPDATE per
+// entry. Without a cap, a malicious payload of N×10⁴ UUIDs would cost N×10⁴
+// sequential round-trips. 500 is comfortably above any real user's library.
+const MAX_REORDER_IDS = 500;
+
+export function validateReorderSavedMeals(body: unknown): ReorderSavedMealsRequest {
+    if (!body || typeof body !== 'object') throw new ValidationError('Request body required');
+    const b = body as Record<string, unknown>;
+    const list = Array.isArray(b.ordered_ids) ? b.ordered_ids : [];
+    if (list.length > MAX_REORDER_IDS) {
+        throw new ValidationError(`ordered_ids may contain at most ${MAX_REORDER_IDS} entries`);
     }
-};
-
-/**
- * Validate session data
- * @param data - Session data to validate
- * @throws ValidationError if data is invalid
- */
-export const validateSessionData = (data: any): void => {
-    const errors: string[] = [];
-
-    // Validate vibe
-    if (!data.vibe || typeof data.vibe !== 'string') {
-        errors.push('Vibe is required and must be a string');
-    } else if (data.vibe.length < 3 || data.vibe.length > 100) {
-        errors.push('Vibe must be between 3 and 100 characters');
+    const ordered_ids = list.filter(isUuid) as string[];
+    if (ordered_ids.length !== list.length) {
+        throw new ValidationError('ordered_ids contains an invalid id');
     }
-
-    // Validate headcount
-    if (!data.headcount || typeof data.headcount !== 'number') {
-        errors.push('Headcount is required and must be a number');
-    } else if (data.headcount < 2 || data.headcount > 20) {
-        errors.push('Headcount must be between 2 and 20');
-    }
-
-    // Validate dietary restrictions (optional)
-    if (data.dietary_restrictions !== undefined) {
-        if (!Array.isArray(data.dietary_restrictions)) {
-            errors.push('Dietary restrictions must be an array');
-        } else {
-            const validRestrictions = ['vegan', 'vegetarian', 'gluten-free', 'dairy-free', 'nut-free', 'halal', 'kosher'];
-            const invalidRestrictions = data.dietary_restrictions.filter(
-                (r: any) => typeof r !== 'string' || !validRestrictions.includes(r.toLowerCase())
-            );
-            if (invalidRestrictions.length > 0) {
-                errors.push(`Invalid dietary restrictions: ${invalidRestrictions.join(', ')}`);
-            }
-        }
-    }
-
-    if (errors.length > 0) {
-        throw new ValidationError('Session validation failed', errors);
-    }
-};
-
-/**
- * Validate vote data
- * @param data - Vote data to validate
- * @throws ValidationError if data is invalid
- */
-export const validateVoteData = (data: any): void => {
-    const errors: string[] = [];
-
-    // Validate session_id
-    if (!data.session_id || typeof data.session_id !== 'string') {
-        errors.push('Session ID is required and must be a string');
-    }
-
-    // Validate meal_id
-    if (!data.meal_id || typeof data.meal_id !== 'string') {
-        errors.push('Meal ID is required and must be a string');
-    }
-
-    // Validate guest_id
-    if (!data.guest_id || typeof data.guest_id !== 'string') {
-        errors.push('Guest ID is required and must be a string');
-    }
-
-    // Validate vote_type
-    if (!data.vote_type || typeof data.vote_type !== 'string') {
-        errors.push('Vote type is required and must be a string');
-    } else if (!['yes', 'no'].includes(data.vote_type.toLowerCase())) {
-        errors.push('Vote type must be either "yes" or "no"');
-    }
-
-    if (errors.length > 0) {
-        throw new ValidationError('Vote validation failed', errors);
-    }
-};
-
-/**
- * Validate meal data
- * @param data - Meal data to validate
- * @throws ValidationError if data is invalid
- */
-export const validateMealData = (data: any): void => {
-    const errors: string[] = [];
-
-    // Validate title
-    if (!data.title || typeof data.title !== 'string') {
-        errors.push('Title is required and must be a string');
-    } else if (data.title.length < 3 || data.title.length > 100) {
-        errors.push('Title must be between 3 and 100 characters');
-    }
-
-    // Validate description
-    if (!data.description || typeof data.description !== 'string') {
-        errors.push('Description is required and must be a string');
-    } else if (data.description.length < 10 || data.description.length > 500) {
-        errors.push('Description must be between 10 and 500 characters');
-    }
-
-    // Validate image_url (optional)
-    if (data.image_url !== undefined && typeof data.image_url !== 'string') {
-        errors.push('Image URL must be a string');
-    }
-
-    // Validate ingredients
-    if (!data.ingredients || !Array.isArray(data.ingredients)) {
-        errors.push('Ingredients are required and must be an array');
-    } else if (data.ingredients.length === 0) {
-        errors.push('At least one ingredient is required');
-    } else {
-        data.ingredients.forEach((ingredient: any, index: number) => {
-            if (!ingredient.name || typeof ingredient.name !== 'string') {
-                errors.push(`Ingredient ${index + 1}: name is required and must be a string`);
-            }
-            if (ingredient.base_quantity === undefined || typeof ingredient.base_quantity !== 'number') {
-                errors.push(`Ingredient ${index + 1}: base_quantity is required and must be a number`);
-            }
-            if (!ingredient.unit || typeof ingredient.unit !== 'string') {
-                errors.push(`Ingredient ${index + 1}: unit is required and must be a string`);
-            }
-        });
-    }
-
-    if (errors.length > 0) {
-        throw new ValidationError('Meal validation failed', errors);
-    }
-};
-
-/**
- * Validate guest join data
- * @param data - Guest data to validate
- * @throws ValidationError if data is invalid
- */
-export const validateGuestJoinData = (data: any): void => {
-    const errors: string[] = [];
-
-    // Validate session_id
-    if (!data.session_id || typeof data.session_id !== 'string') {
-        errors.push('Session ID is required and must be a string');
-    }
-
-    // Guest name is optional but if provided must be valid
-    if (data.guest_name !== undefined) {
-        if (typeof data.guest_name !== 'string') {
-            errors.push('Guest name must be a string');
-        } else if (data.guest_name.length > 50) {
-            errors.push('Guest name must be less than 50 characters');
-        }
-    }
-
-    if (errors.length > 0) {
-        throw new ValidationError('Guest join validation failed', errors);
-    }
-};
-
-/**
- * Sanitize string input
- * @param input - String to sanitize
- * @returns Sanitized string
- */
-export const sanitizeString = (input: string): string => {
-    if (typeof input !== 'string') {
-        return '';
-    }
-    // Remove any HTML tags and trim whitespace
-    return input.replace(/<[^>]*>/g, '').trim();
-};
-
-/**
- * Validate and sanitize session data
- * @param data - Session data to validate and sanitize
- * @returns Sanitized session data
- */
-export const validateAndSanitizeSessionData = (data: any): any => {
-    validateSessionData(data);
-
-    return {
-        vibe: sanitizeString(data.vibe),
-        headcount: parseInt(data.headcount, 10),
-        dietary_restrictions: data.dietary_restrictions
-            ? data.dietary_restrictions.map((r: string) => sanitizeString(r).toLowerCase())
-            : [],
-    };
-};
-
-/**
- * Check if a string is a valid UUID v4
- * @param uuid - String to check
- * @returns true if valid UUID v4, false otherwise
- */
-export const isValidUUID = (uuid: string): boolean => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(uuid);
-};
+    return { ordered_ids };
+}
 
 // Made with Bob

@@ -1,89 +1,74 @@
-// Base API configuration with axios
+// Axios instance for the atavola backend. Auth token is taken from the
+// Supabase session at request time so refreshes don't strand expired bearers.
 
-import axios, { AxiosError } from 'axios';
-import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import { getAuthToken, removeAuthToken } from '../utils/storage';
+import axios from 'axios';
+import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import toast from 'react-hot-toast';
+import { supabase } from '../lib/supabase';
+import { getMockToken } from '../utils/storage';
 
-// Create axios instance with base configuration
+// baseURL resolution:
+//   • VITE_API_URL explicitly set       → use it (override for any env)
+//   • production build, VITE_API_URL '' → "/api" (same-origin: serverless
+//     functions live at the same Vercel project as the frontend)
+//   • dev build, VITE_API_URL ''        → http://localhost:3000/api (Express
+//     dev-server in backend/src/dev-server.ts runs on :3000)
+//
+// The previous default fell back to localhost:3000 in *every* env. In a prod
+// build with no VITE_API_URL set (the documented setup) every API call would
+// quietly target the user's own machine. Caught in the v2.12 audit.
+const apiBaseUrl =
+    import.meta.env.VITE_API_URL?.trim() ||
+    (import.meta.env.PROD ? '/api' : 'http://localhost:3000/api');
+
 const api: AxiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-    timeout: 30000,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    baseURL: apiBaseUrl,
+    timeout: 90_000,
+    headers: { 'Content-Type': 'application/json' },
 });
 
-// Request interceptor - Add auth token to requests
-api.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
-        const token = getAuthToken();
-        if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+    // The mock-token shortcut only exists for local mock-mode dev. In a
+    // production build we want a single, predictable auth path: real
+    // Supabase JWT or nothing. Audit 2026-05-07 caught that a dangling
+    // `bm_mock_token` in localStorage from earlier dev work would otherwise
+    // get sent to the real backend on every request — the backend rejects
+    // it (Supabase auth.getUser refuses non-JWTs), but the cleaner answer
+    // is "don't even try in prod".
+    if (!import.meta.env.PROD) {
+        const mockToken = getMockToken();
+        if (mockToken) {
+            config.headers.Authorization = `Bearer ${mockToken}`;
+            return config;
         }
-        return config;
-    },
-    (error: AxiosError) => {
-        return Promise.reject(error);
     }
-);
+    const { data } = await supabase.auth.getSession();
+    const accessToken = data.session?.access_token;
+    if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+});
 
-// Response interceptor - Handle errors globally
 api.interceptors.response.use(
-    (response) => {
-        return response;
-    },
+    (r) => r,
     (error: AxiosError) => {
-        // Handle different error scenarios
         if (error.response) {
             const status = error.response.status;
             const data = error.response.data as { message?: string; error?: string };
-            const url = error.config?.url || '';
-
-            // Don't auto-redirect on auth endpoints - let components handle it
-            const isAuthEndpoint = url.includes('/auth/verify') || url.includes('/auth/magic-link');
-
-            switch (status) {
-                case 401:
-                    // Unauthorized - clear token and redirect to login
-                    // BUT: Don't redirect if we're on an auth endpoint
-                    if (!isAuthEndpoint) {
-                        removeAuthToken();
-                        toast.error('Session expired. Please login again.');
-                        window.location.href = '/';
-                    }
-                    break;
-                case 403:
-                    if (!isAuthEndpoint) {
-                        toast.error('Access denied');
-                    }
-                    break;
-                case 404:
-                    if (!isAuthEndpoint) {
-                        toast.error(data.message || 'Resource not found');
-                    }
-                    break;
-                case 429:
-                    toast.error('Too many requests. Please try again later.');
-                    break;
-                case 500:
-                    if (!isAuthEndpoint) {
-                        toast.error('Server error. Please try again later.');
-                    }
-                    break;
-                default:
-                    if (!isAuthEndpoint) {
-                        toast.error(data.message || data.error || 'An error occurred');
-                    }
+            if (status === 429) {
+                toast.error('Too many requests. Please try again later.');
+            } else if (status >= 500) {
+                toast.error('Server error. Please try again later.');
+            } else if (status === 404) {
+                // Caller surfaces this if needed; no global toast.
+            } else if (status !== 401) {
+                const msg = data.message || data.error;
+                if (msg) toast.error(msg);
             }
         } else if (error.request) {
-            // Network error
             toast.error('Network error. Please check your connection.');
-        } else {
-            // Other errors
-            toast.error('An unexpected error occurred');
         }
-
         return Promise.reject(error);
     }
 );

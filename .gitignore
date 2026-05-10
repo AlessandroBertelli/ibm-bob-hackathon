@@ -1,5 +1,5 @@
 # ============================================
-# Group Food Tinder - Root .gitignore
+# BiteMatch - Root .gitignore
 # ============================================
 
 # ============================================
@@ -16,22 +16,17 @@ package-lock.json
 # ============================================
 # Environment Variables
 # ============================================
-# Ignore all .env files by default
+# Ignore every populated .env file. The single template lives at .env.example
+# in the repo root and is loaded by both packages.
 .env
 .env.*
-
-# Exception: Allow backend/.env with safe defaults for mock mode
-!backend/.env
-!backend/.env.example
-!frontend/.env.example
-!.env.example
-
-# Explicitly ignore frontend environment files (no safe defaults)
+backend/.env
+backend/.env.*
 frontend/.env
-frontend/.env.local
-frontend/.env.development
-frontend/.env.test
-frontend/.env.production
+frontend/.env.*
+
+# Allow the example template through.
+!.env.example
 
 # ============================================
 # Build Outputs
@@ -108,13 +103,9 @@ $RECYCLE.BIN/
 .Trash-*
 
 # ============================================
-# Firebase
+# Supabase CLI
 # ============================================
-firebase-debug.log
-firestore-debug.log
-ui-debug.log
-.firebase/
-firebase-debug.*.log
+.supabase/
 
 # ============================================
 # Temporary Files
@@ -128,6 +119,7 @@ firebase-debug.*.log
 .parcel-cache/
 .next/
 .nuxt/
+TODO.md
 
 # ============================================
 # Miscellaneous
@@ -174,6 +166,10 @@ lib-cov/
 
 # Vercel
 .vercel
+
+# Favicon source bundles — only the unpacked files in /public are needed.
+*.zip
+frontend/public/favicon.zip
 
 # Turborepo
 .turbo
