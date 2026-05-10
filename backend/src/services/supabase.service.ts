@@ -482,4 +482,3 @@ export async function uploadMealImage(
 }
 
 // Made with Bob
-Bob

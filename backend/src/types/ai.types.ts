@@ -20,7 +20,7 @@ export interface GeneratedMeal {
 export interface AssembledMeal {
     title: string;
     description: string;
-    image_url: string;
+    image_url: string | null;
     ingredients: ScaledIngredient[];
     instructions: string[];
 }
