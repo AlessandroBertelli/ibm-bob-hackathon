@@ -6,13 +6,40 @@
     "cleanUrls": true,
     "trailingSlash": false,
     "functions": {
-        "api/**/*.ts": {
+        "api/sessions/[[...path]].ts": {
+            "runtime": "@vercel/node@5.4.0",
+            "maxDuration": 60
+        },
+        "api/saved-meals/[[...path]].ts": {
+            "runtime": "@vercel/node@5.4.0",
+            "maxDuration": 60
+        },
+        "api/track/[[...action]].ts": {
+            "runtime": "@vercel/node@5.4.0",
+            "maxDuration": 60
+        },
+        "api/votes/[[...action]].ts": {
+            "runtime": "@vercel/node@5.4.0",
+            "maxDuration": 60
+        },
+        "api/system/[[...path]].ts": {
+            "runtime": "@vercel/node@5.4.0",
+            "maxDuration": 60
+        },
+        "api/auth/[[...path]].ts": {
+            "runtime": "@vercel/node@5.4.0",
+            "maxDuration": 60
+        },
+        "api/_cron/weekly-stats.ts": {
             "runtime": "@vercel/node@5.4.0",
             "maxDuration": 60
         }
     },
     "rewrites": [
-        { "source": "/((?!api/).*)", "destination": "/index.html" }
+        {
+            "source": "/((?!api/).*)",
+            "destination": "/index.html"
+        }
     ],
     "crons": [
         {
@@ -28,32 +55,65 @@
                     "key": "Content-Security-Policy",
                     "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://picsum.photos; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
                 },
-                { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-                { "key": "X-Frame-Options", "value": "DENY" },
-                { "key": "X-Content-Type-Options", "value": "nosniff" },
-                { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-                { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" },
-                { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
+                {
+                    "key": "Strict-Transport-Security",
+                    "value": "max-age=31536000; includeSubDomains"
+                },
+                {
+                    "key": "X-Frame-Options",
+                    "value": "DENY"
+                },
+                {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                },
+                {
+                    "key": "Referrer-Policy",
+                    "value": "strict-origin-when-cross-origin"
+                },
+                {
+                    "key": "Permissions-Policy",
+                    "value": "camera=(), microphone=(), geolocation=(), payment=()"
+                },
+                {
+                    "key": "Cross-Origin-Opener-Policy",
+                    "value": "same-origin"
+                }
             ]
         },
         {
             "source": "/api/(.*)",
             "headers": [
-                { "key": "Cache-Control", "value": "no-store" },
-                { "key": "X-Content-Type-Options", "value": "nosniff" }
+                {
+                    "key": "Cache-Control",
+                    "value": "no-store"
+                },
+                {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                }
             ]
         },
         {
             "source": "/(about|privacy|terms|robots\\.txt|sitemap\\.xml|humans\\.txt|llms\\.txt|llms-full\\.txt|og\\.svg)",
             "headers": [
-                { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=86400" }
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=3600, s-maxage=86400"
+                }
             ]
         },
         {
             "source": "/.well-known/security.txt",
             "headers": [
-                { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
-                { "key": "Cache-Control", "value": "public, max-age=86400" }
+                {
+                    "key": "Content-Type",
+                    "value": "text/plain; charset=utf-8"
+                },
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=86400"
+                }
             ]
         }
     ]
