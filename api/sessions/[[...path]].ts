@@ -22,6 +22,8 @@ import { validateCreateSession } from '../../backend/src/utils/validation.util';
 import { buildSessionMeals } from '../../backend/src/services/session.flow';
 import { rateLimit } from '../_lib/ratelimit';
 
+export const maxDuration = 60;
+
 const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{8,128}$/;
 
 export default route({ methods: ['GET', 'POST'], auth: false }, async (req: AuthedRequest, res) => {
