@@ -50,7 +50,7 @@ export const useAuth = (): UseAuthReturn => {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const trackedLogin = React.useRef(false);
+    const trackedLogin = useRef(false);
 
     useEffect(() => {
         let cancelled = false;
