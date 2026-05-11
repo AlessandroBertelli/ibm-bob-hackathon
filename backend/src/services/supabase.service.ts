@@ -17,6 +17,7 @@ import {
     ScaledIngredient,
 } from '../types/session.types';
 import { SavedMeal } from '../types/saved-meal.types';
+import { isUuid } from '../utils/validation.util';
 import { NotFoundError, InternalServerError } from '../utils/errors.util';
 
 let client: SupabaseClient | null = null;
@@ -197,10 +198,14 @@ export async function ensureGuest(
     sessionId: string,
     userId: string | null = null
 ): Promise<{ id: string; guest_token: string }> {
-    console.log(`[supabase/ensureGuest] Minting guest for session ${sessionId} (user: ${userId})`);
+    // Only pass userId if it's a valid UUID. Mock-mode IDs (mock-...) will be
+    // correctly ignored here.
+    const cleanUserId = userId && isUuid(userId) ? userId : null;
+
+    console.log(`[supabase/ensureGuest] Minting guest for session ${sessionId} (user: ${cleanUserId})`);
     const { data, error } = await getClient().rpc('ensure_guest', {
         p_session_id: sessionId,
-        p_user_id: userId,
+        p_user_id: cleanUserId,
     });
     if (error) {
         console.error(`[supabase/ensureGuest] RPC error:`, error);

@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Session as SupabaseSession } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, isMockMode } from '../lib/supabase';
 import type { AuthUser } from '../types';
 import { clearMockToken, getMockToken, setMockToken } from '../utils/storage';
 import { trackLogin } from '../services/track.service';
@@ -55,7 +55,7 @@ export const useAuth = (): UseAuthReturn => {
 
         const refresh = async () => {
             const mock = getMockToken();
-            if (mock) {
+            if (isMockMode && mock) {
                 if (!cancelled) {
                     setUser(userFromMockToken(mock));
                     setIsLoading(false);
@@ -72,8 +72,8 @@ export const useAuth = (): UseAuthReturn => {
         refresh();
 
         const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-            // Don't override the mock-mode user.
-            if (getMockToken()) return;
+            // Don't override the mock-mode user if it's currently set.
+            if (isMockMode && getMockToken()) return;
             setUser(userFromSession(session));
         });
 

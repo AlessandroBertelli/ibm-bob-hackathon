@@ -1,13 +1,14 @@
 // Mints (or reuses) a guest token for a session so anonymous voters can call
 // the cast_vote RPC without ever signing in.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { mintGuest } from '../services/vote.service';
 import { getGuestToken, setGuestToken } from '../utils/storage';
 
 export const useGuestSession = (sessionId: string | undefined) => {
     const [token, setToken] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const isMinting = useRef<string | null>(null);
 
     useEffect(() => {
         if (!sessionId) return;
@@ -17,6 +18,11 @@ export const useGuestSession = (sessionId: string | undefined) => {
             setToken(cached);
             return;
         }
+
+        // Prevent redundant calls if we are already minting for this session
+        if (isMinting.current === sessionId) return;
+        isMinting.current = sessionId;
+
         let cancelled = false;
         mintGuest(sessionId)
             .then((res) => {
@@ -27,6 +33,9 @@ export const useGuestSession = (sessionId: string | undefined) => {
             .catch((err) => {
                 if (cancelled) return;
                 setError(err instanceof Error ? err.message : 'Error');
+            })
+            .finally(() => {
+                isMinting.current = null;
             });
         return () => {
             cancelled = true;
