@@ -27,7 +27,7 @@ const CONTRIBUTORS: Contributor[] = [
     {
         name: 'Marco',
         linkedin: 'https://www.linkedin.com/in/marco-prosperi-05453515a',
-        photo: '/maraco.jpeg',
+        photo: '/marco.jpeg',
         gradient: 'from-amber-400 to-orange-500',
     },
     {
