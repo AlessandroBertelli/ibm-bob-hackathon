@@ -20,14 +20,14 @@ interface Contributor {
 const CONTRIBUTORS: Contributor[] = [
     {
         name: 'Alessandro',
-        linkedin: null,
-        photo: null,
+        linkedin: 'https://www.linkedin.com/in/alessandro-bertelli',
+        photo: '/alessandro.jpeg',
         gradient: 'from-orange-400 to-rose-500',
     },
     {
         name: 'Marco',
-        linkedin: null,
-        photo: null,
+        linkedin: 'https://www.linkedin.com/in/marco-prosperi-05453515a',
+        photo: '/maraco.jpeg',
         gradient: 'from-amber-400 to-orange-500',
     },
     {
