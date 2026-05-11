@@ -197,12 +197,18 @@ export async function ensureGuest(
     sessionId: string,
     userId: string | null = null
 ): Promise<{ id: string; guest_token: string }> {
+    console.log(`[supabase/ensureGuest] Minting guest for session ${sessionId} (user: ${userId})`);
     const { data, error } = await getClient().rpc('ensure_guest', {
         p_session_id: sessionId,
         p_user_id: userId,
     });
-    if (error || !data || data.length === 0) {
-        throw new InternalServerError(`Failed to mint guest: ${error?.message ?? 'no row'}`);
+    if (error) {
+        console.error(`[supabase/ensureGuest] RPC error:`, error);
+        throw new InternalServerError(`Failed to mint guest: ${error.message}`);
+    }
+    if (!data || data.length === 0) {
+        console.error(`[supabase/ensureGuest] No data returned from RPC`);
+        throw new InternalServerError(`Failed to mint guest: no row returned`);
     }
     const row = data[0] as { id: string; guest_token: string };
     return { id: row.id, guest_token: row.guest_token };

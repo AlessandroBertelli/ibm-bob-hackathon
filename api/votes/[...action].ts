@@ -22,6 +22,7 @@ export default route({ methods: ['POST'], auth: false }, async (req: AuthedReque
     if (action === 'guest') {
         await rateLimit(req, 'mint_guest', 30, 3600);
         const { session_id } = validateMintGuest(req.body);
+        console.log(`[api/votes/guest] Request for session: ${session_id}, User: ${req.user?.id || 'anonymous'}`);
         const guest = await dataService.ensureGuest(session_id, req.user?.id ?? null);
         res.status(201).json({ guest_token: guest.guest_token, guest_id: guest.id });
         return;

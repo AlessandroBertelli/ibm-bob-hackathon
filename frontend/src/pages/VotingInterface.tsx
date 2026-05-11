@@ -92,6 +92,9 @@ export const VotingInterface = () => {
     }
 
     if (loadError || guestError) {
+        const isNotFound = loadError?.includes('404') || guestError?.includes('404') || 
+                           loadError?.toLowerCase().includes('not found') || 
+                           guestError?.toLowerCase().includes('not found');
         return (
             <div className="min-h-[80vh] grid place-items-center p-4">
                 <motion.div
@@ -103,8 +106,11 @@ export const VotingInterface = () => {
                         <span className="text-4xl">❌</span>
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                        {t.vote.notFoundTitle}
+                        {isNotFound ? t.vote.notFoundTitle : t.common.error}
                     </h2>
+                    {!isNotFound && (
+                        <p className="text-gray-600 mb-6">{loadError || guestError}</p>
+                    )}
                     <Button variant="primary" fullWidth onClick={() => navigate('/')}>
                         {t.vote.toHome}
                     </Button>
