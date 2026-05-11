@@ -13,6 +13,30 @@
     },
     "rewrites": [
         {
+            "source": "/api/sessions/(.*)",
+            "destination": "/api/sessions/[...path]"
+        },
+        {
+            "source": "/api/votes/(.*)",
+            "destination": "/api/votes/[...action]"
+        },
+        {
+            "source": "/api/track/(.*)",
+            "destination": "/api/track/[...action]"
+        },
+        {
+            "source": "/api/system/(.*)",
+            "destination": "/api/system/[...path]"
+        },
+        {
+            "source": "/api/auth/(.*)",
+            "destination": "/api/auth/[...path]"
+        },
+        {
+            "source": "/api/saved-meals/(.*)",
+            "destination": "/api/saved-meals/[...path]"
+        },
+        {
             "source": "/((?!api/).*)",
             "destination": "/index.html"
         }
